@@ -1,0 +1,14 @@
+#!/bin/bash
+# Window switcher for Hyprland using fuzzel
+
+# Get window list
+windows=$(hyprctl clients -j | jq -r '.[] | "\(.workspace.id):\(.class) - \(.title) [\(.address)]"' | sort)
+
+# Show fuzzel menu and get selection
+selected=$(echo "$windows" | fuzzel --dmenu --lines 10 --width 60)
+
+# Extract address and switch to window
+if [ -n "$selected" ]; then
+    address=$(echo "$selected" | grep -o '\[0x[^]]*\]' | tr -d '[]')
+    hyprctl dispatch focuswindow "address:$address"
+fi

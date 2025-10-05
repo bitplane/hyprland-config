@@ -1,0 +1,42 @@
+#!/bin/bash
+# Simple weather widget for waybar
+
+# You can get a free API key from https://openweathermap.org/api
+API_KEY="your_api_key_here"
+CITY="London"  # Change to your city
+UNITS="metric"  # metric for Celsius, imperial for Fahrenheit
+
+# If no API key, show placeholder
+if [ "$API_KEY" = "your_api_key_here" ]; then
+    echo '{"text": " 22°C", "tooltip": "Set up weather API key in weather-widget script"}'
+    exit 0
+fi
+
+# Fetch weather data
+response=$(curl -s "http://api.openweathermap.org/data/2.5/weather?q=$CITY&appid=$API_KEY&units=$UNITS")
+
+if [ $? -eq 0 ] && [ -n "$response" ]; then
+    # Parse JSON response
+    temp=$(echo "$response" | jq -r '.main.temp' | cut -d'.' -f1)
+    desc=$(echo "$response" | jq -r '.weather[0].description')
+    feels_like=$(echo "$response" | jq -r '.main.feels_like' | cut -d'.' -f1)
+    humidity=$(echo "$response" | jq -r '.main.humidity')
+    
+    # Weather icon based on condition
+    main_weather=$(echo "$response" | jq -r '.weather[0].main')
+    case "$main_weather" in
+        "Clear") icon="" ;;
+        "Clouds") icon="" ;;
+        "Rain") icon="" ;;
+        "Snow") icon="" ;;
+        "Thunderstorm") icon="" ;;
+        "Drizzle") icon="" ;;
+        "Mist"|"Fog") icon="" ;;
+        *) icon="" ;;
+    esac
+    
+    # Format output for waybar
+    echo "{\"text\": \"$icon ${temp}°C\", \"tooltip\": \"$desc\\nFeels like: ${feels_like}°C\\nHumidity: ${humidity}%\"}"
+else
+    echo '{"text": " N/A", "tooltip": "Weather data unavailable"}'
+fi

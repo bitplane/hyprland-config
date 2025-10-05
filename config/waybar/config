@@ -1,0 +1,126 @@
+{
+  "layer": "top",
+    "height": 10,
+    "modules-left": ["custom/arch", "hyprland/workspaces" , "memory"],
+    "modules-center": ["custom/playerctl"],
+    "modules-right": ["bluetooth", "backlight","pulseaudio", "battery", "network","clock", "tray"],
+    "custom/arch": {
+      "format": "🪟",
+      "on-click": "wofi --show drun"
+    },
+    "hyprland/workspaces": {
+      "format": "{icon}",
+      "on-click": "activate",
+      "all-outputs": true,
+      "persistent_workspaces" :{
+          "1": [],
+	 		    "2": [],
+	 		    "3": [],
+	 		    "4": [],
+	 		    "5": [],
+	 		    "6": [],
+	 		    "7": [],
+	 		    "8": [],
+	 		    "9": [],
+	 		    "10": []
+        },
+        "format-icons": {
+                "1": "1",
+             		"2": "2",
+             		"3": "3",
+             		"4": "4",
+             		"5": "5",
+             		"6": "6",
+             		"7": "7",
+             		"8": "8",
+             		"9": "9",
+             		"10": "10"
+          }
+    },
+    "clock": {
+      "format": "<span color='#b69bf1'>🕐</span> {:%H:%M}",
+  "format-alt": "<span foreground='#b69bf1'>📅</span> {:%Y-%m-%d %H:%M}",
+      "tooltip-format": "<big>{:%Y %B}</big>\n<tt><small>{calendar}</small></tt>"
+    },
+    "backlight": {
+      "device": "amdgpu_bl1",
+      "format": "{icon}",
+      "format-icons": ["🔅", "🔆", "☀️"],
+      "tooltip-format": "Brightness: {percent}%"
+    },
+    "bluetooth": {
+      "format": "{icon}",
+      "format-icons": {
+        "enabled": "🔵",
+        "disabled": "🔘",
+        "off": "📵"
+      },
+      "format-connected": "🔵 {num_connections}",
+      "tooltip-format": "Bluetooth {status}",
+      "tooltip-format-connected": "Bluetooth {status}\n{device_enumerate}",
+      "tooltip-format-enumerate-connected": "{device_alias}   {device_battery_percentage}%",
+      "on-click": "blueman-manager"
+    },
+    "network": {
+      "interface": "wlp2s0",
+      "format": "{ifname}",
+      "format-wifi": "{icon}",
+      "tooltip-format-wifi": "Connected to: {essid}\nSignal Strength: {signalStrength}%",
+      "format-icons": {
+        "wifi": [
+          "<span color='#ff6b6b'>▂</span><span color='#666'>▄▆█</span>",
+          "<span color='#ffa500'>▂▄</span><span color='#666'>▆█</span>", 
+          "<span color='#ffff00'>▂▄▆</span><span color='#666'>█</span>",
+          "<span color='#90ee90'>▂▄▆█</span>"
+        ],
+        "ethernet": "🌐",
+        "disconnected": "📵"
+      },
+      "format-ethernet": "{ipaddr}/{cidr} ",
+      "format-disconnected": "<span color='#ff005f'>󰖪 </span>No Network",
+      "on-click": "nm-connection-editor"
+    },
+    "battery": {
+      "format": "<span color='#a8cd76'>🔋</span> {capacity}%",
+      "format-icons": ["🪫", "🪫", "🔋", "🔋", "🔋", "🔋", "🔋", "🔋", "🔋", "🔋", "🔋"],
+      "format-charging": "<span color='#a8cd76'>⚡</span> {capacity}%"
+    },
+    "pulseaudio": {
+      "on-click": "pactl set-sink-mute @DEFAULT_SINK@ toggle",
+      "format": "{icon}",
+      "format-muted": "🔇",
+      "tooltip-format": "Volume: {volume}%",
+      "format-icons": ["🔈", "🔉", "🔊"],
+    "on-click-right" : "pavucontrol"
+    },
+    "memory": {
+    "format": "<span foreground='#9ece6a'>🧠</span> {}%",
+    "on-click": "hyprctl dispatch workspace empty; kitty btop"
+    },
+    "tray": {
+    "icon-size": 20,
+    "reverse-direction": true,
+    "spacing": 6
+    },
+    "cpu": {
+    "format": "<span foreground='#ff005f'></span>  {usage}%"
+     },
+     "temperature": {
+    "critical-threshold": 80,
+    "format": "<span foreground='#5d73ca'></span> {temperatureC}°C"
+     },
+    "custom/playerctl": {
+     "format": "{icon} <span>{}</span>",
+     "return-type": "json",
+     "max-length": 55,
+     "exec": "playerctl -a metadata --format '{\"text\": \"{{markup_escape(title)}}\", \"tooltip\": \"{{playerName}} : {{markup_escape(title)}}\", \"alt\": \"{{status}}\", \"class\": \"{{status}}\"}' -F",
+     "on-click-middle": "playerctl previous",
+     "on-click": "playerctl play-pause",
+     "on-click-right": "playerctl next",
+     "format-icons": {
+       "Paused": "<span foreground='#bb9af7'>⏸</span>",
+       "Playing": "<span foreground='#bb9af7'>▶</span>"
+     }
+     }
+
+}

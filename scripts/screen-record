@@ -1,0 +1,29 @@
+#!/bin/bash
+# Screen recording toggle for Hyprland
+
+PIDFILE="/tmp/wf-recorder.pid"
+
+if [ -f "$PIDFILE" ]; then
+    # Stop recording
+    kill $(cat "$PIDFILE")
+    rm "$PIDFILE"
+    notify-send "Recording Stopped" "Video saved to ~/Videos/"
+else
+    # Start recording
+    mkdir -p ~/Videos
+    FILE="$HOME/Videos/recording-$(date +%Y%m%d-%H%M%S).mp4"
+    
+    if [ "$1" = "area" ]; then
+        # Record selected area with audio
+        wf-recorder -a -g "$(slurp)" -f "$FILE" &
+    elif [ "$1" = "audio" ]; then
+        # Full screen with audio
+        wf-recorder -a -f "$FILE" &
+    else
+        # Full screen without audio
+        wf-recorder -f "$FILE" &
+    fi
+    
+    echo $! > "$PIDFILE"
+    notify-send "Recording Started" "Press Super+Shift+R to stop"
+fi
