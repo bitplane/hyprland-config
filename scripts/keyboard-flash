@@ -1,0 +1,78 @@
+#!/usr/bin/python3
+import time
+import sys
+import glob
+import os
+
+def find_razer_device():
+    """Auto-detect the Razer keyboard device"""
+    devices = glob.glob("/sys/bus/hid/drivers/razerkbd/0003:*")
+    for device in devices:
+        if os.path.exists(f"{device}/matrix_effect_none"):
+            return device
+    return None
+
+DEVICE = find_razer_device()
+if not DEVICE:
+    print("Error: Could not find Razer keyboard device", file=sys.stderr)
+    sys.exit(1)
+
+def get_current_effect():
+    """Read the current effect from the keyboard"""
+    effects = ['none', 'wave', 'reactive', 'breath', 'spectrum', 'static', 'starlight']
+    for effect in effects:
+        try:
+            with open(f"{DEVICE}/matrix_effect_{effect}", "r") as f:
+                value = f.read().strip()
+                if value == "1":
+                    return effect
+        except:
+            continue
+    return "none"
+
+def set_effect(effect):
+    """Set keyboard effect"""
+    try:
+        if effect == "reactive":
+            # Reactive needs RGB color + speed (1-4)
+            with open(f"{DEVICE}/matrix_effect_reactive", "wb") as f:
+                f.write(bytes([255, 255, 255, 2]))  # White, medium speed
+        else:
+            with open(f"{DEVICE}/matrix_effect_{effect}", "w") as f:
+                f.write("1")
+    except Exception as e:
+        print(f"Error setting effect {effect}: {e}", file=sys.stderr)
+
+def set_all_keys(r, g, b):
+    """Set all keys to a color"""
+    try:
+        # Set to custom mode
+        with open(f"{DEVICE}/matrix_effect_custom", "w") as f:
+            f.write("1")
+
+        # Set all positions to the color
+        for row in range(6):
+            for col in range(22):
+                frame_data = bytes([row, col, col, r, g, b])
+                with open(f"{DEVICE}/matrix_custom_frame", "wb") as f:
+                    f.write(frame_data)
+    except Exception as e:
+        print(f"Error setting keys: {e}", file=sys.stderr)
+
+def flash_keyboard():
+    """Flash keyboard twice with Anthropic orange color"""
+    try:
+        for i in range(2):
+            # On - Anthropic orange at half brightness, more saturated
+            set_all_keys(128, 40, 0)  # Deeper orange at half brightness
+            time.sleep(0.5)
+
+            # Off - black
+            set_all_keys(0, 0, 0)
+            time.sleep(0.5)
+    finally:
+        # Always restore to reactive (default)
+        set_effect("reactive")
+
+if __name__ == "__main__":
+    flash_keyboard()

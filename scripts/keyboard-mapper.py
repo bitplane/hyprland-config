@@ -2,8 +2,20 @@
 import time
 import os
 import sys
+import glob
 
-DEVICE = "/sys/bus/hid/drivers/razerkbd/0003:1532:028C.0006"
+def find_razer_device():
+    """Auto-detect the Razer keyboard device"""
+    devices = glob.glob("/sys/bus/hid/drivers/razerkbd/0003:*")
+    for device in devices:
+        if os.path.exists(f"{device}/matrix_effect_none"):
+            return device
+    return None
+
+DEVICE = find_razer_device()
+if not DEVICE:
+    print("Error: Could not find Razer keyboard device", file=sys.stderr)
+    sys.exit(1)
 
 def set_key_color(row, col, r, g, b):
     try:
