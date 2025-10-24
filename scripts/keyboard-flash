@@ -90,10 +90,15 @@ def flash_keyboard_with_window():
 
             time.sleep(0.5)
 
-            # Off - black
+            # Off - black for all keys except window digits stay red
             for row in range(6):
                 for col in range(22):
-                    frame_data = bytes([row, col, col, 0, 0, 0])
+                    if (row, col) in highlight_positions:
+                        # Keep window digits red
+                        frame_data = bytes([row, col, col, 255, 0, 0])
+                    else:
+                        # Turn off other keys
+                        frame_data = bytes([row, col, col, 0, 0, 0])
                     with open(f"{DEVICE}/matrix_custom_frame", "wb") as f:
                         f.write(frame_data)
 

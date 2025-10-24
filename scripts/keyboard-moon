@@ -1,0 +1,128 @@
+#!/usr/bin/python3
+import sys
+import glob
+import os
+import math
+import argparse
+from datetime import datetime
+from PIL import Image, ImageDraw
+
+def find_razer_device():
+    """Auto-detect the Razer keyboard device"""
+    devices = glob.glob("/sys/bus/hid/drivers/razerkbd/0003:*")
+    for device in devices:
+        if os.path.exists(f"{device}/matrix_effect_none"):
+            return device
+    return None
+
+DEVICE = find_razer_device()
+if not DEVICE:
+    print("Error: Could not find Razer keyboard device", file=sys.stderr)
+    sys.exit(1)
+
+# Keyboard dimensions
+ROWS = 6
+COLS = 22
+
+def get_moon_phase(date=None):
+    """Calculate moon phase for a given date (0-1, where 0=new, 0.5=full)"""
+    # Known new moon
+    known_new_moon = datetime(2000, 1, 6, 18, 14)
+    target_date = date if date else datetime.now()
+
+    # Lunar cycle is approximately 29.53 days
+    lunar_cycle = 29.53058867
+    days_since = (target_date - known_new_moon).days
+    phase = (days_since % lunar_cycle) / lunar_cycle
+
+    return phase
+
+def create_moon_image(phase):
+    """Create a moon phase image at 15x6 resolution (actual keyboard size)"""
+    width = 15  # Actual keyboard width (cols 1-15)
+    height = 6
+    img = Image.new('RGB', (width, height), (10, 10, 40))  # Midnight blue background
+
+    # Moon circle in center
+    center_x = width / 2
+    center_y = height / 2
+    radius = 2.5
+
+    # Draw moon
+    for x in range(width):
+        for y in range(height):
+            dx = x - center_x
+            dy = y - center_y
+            dist = math.sqrt(dx*dx + dy*dy)
+
+            if dist <= radius:
+                # Inside the moon circle
+                # phase: 0 = new moon, 0.25 = first quarter, 0.5 = full, 0.75 = last quarter
+
+                # Calculate the terminator position (shadow line)
+                if phase < 0.5:
+                    # Waxing moon (0 to 0.5)
+                    # 0 = all dark (terminator at left edge), 0.5 = all light (terminator at right edge)
+                    terminator_x = -radius + (phase * 2) * (radius * 2)
+                    is_lit = dx < terminator_x
+                else:
+                    # Waning moon (0.5 to 1.0)
+                    # 0.5 = all light (terminator at left edge), 1.0 = all dark (terminator at right edge)
+                    waning_phase = (phase - 0.5) * 2
+                    terminator_x = -radius + waning_phase * (radius * 2)
+                    is_lit = dx > terminator_x
+
+                color = (200, 200, 200) if is_lit else (20, 20, 20)
+                img.putpixel((x, y), color)
+
+    return img
+
+def set_effect(effect):
+    """Set keyboard effect"""
+    try:
+        if effect == "reactive":
+            with open(f"{DEVICE}/matrix_effect_reactive", "wb") as f:
+                f.write(bytes([255, 255, 255, 2]))
+        else:
+            with open(f"{DEVICE}/matrix_effect_{effect}", "w") as f:
+                f.write("1")
+    except Exception as e:
+        print(f"Error setting effect {effect}: {e}", file=sys.stderr)
+
+def display_moon(date=None):
+    """Display moon phase on keyboard for given date"""
+    try:
+        phase = get_moon_phase(date)
+        phase_name = ["New Moon", "Waxing Crescent", "First Quarter", "Waxing Gibbous",
+                      "Full Moon", "Waning Gibbous", "Last Quarter", "Waning Crescent"]
+        phase_idx = int(phase * 8) % 8
+
+        print(f"Moon Phase: {phase_name[phase_idx]} ({phase:.2%})")
+
+        img = create_moon_image(phase)
+
+        # Save temp image
+        temp_path = "/tmp/keyboard-moon.png"
+        img.save(temp_path)
+
+        # Display using keyboard-image script
+        keyboard_image_path = os.path.join(os.path.dirname(__file__), "keyboard-image")
+        os.execv(keyboard_image_path, [keyboard_image_path, temp_path])
+
+    except Exception as e:
+        print(f"Error: {e}", file=sys.stderr)
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description='Display moon phase on Razer keyboard')
+    parser.add_argument('--date', type=str, help='Date in YYYY-MM-DD format (default: today)')
+    args = parser.parse_args()
+
+    target_date = None
+    if args.date:
+        try:
+            target_date = datetime.strptime(args.date, '%Y-%m-%d')
+        except ValueError:
+            print(f"Invalid date format: {args.date}. Use YYYY-MM-DD", file=sys.stderr)
+            sys.exit(1)
+
+    display_moon(target_date)

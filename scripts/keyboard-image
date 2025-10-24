@@ -1,0 +1,110 @@
+#!/usr/bin/python3
+import sys
+import glob
+import os
+from PIL import Image
+
+def find_razer_device():
+    """Auto-detect the Razer keyboard device"""
+    devices = glob.glob("/sys/bus/hid/drivers/razerkbd/0003:*")
+    for device in devices:
+        if os.path.exists(f"{device}/matrix_effect_none"):
+            return device
+    return None
+
+DEVICE = find_razer_device()
+if not DEVICE:
+    print("Error: Could not find Razer keyboard device", file=sys.stderr)
+    sys.exit(1)
+
+# Keyboard dimensions
+ROWS = 6
+COLS = 22
+
+# Actual key positions (from keyboard-mapper layout)
+ACTUAL_KEYS = [
+    # Row 0: Function keys
+    (0, 1), (0, 2), (0, 3), (0, 4), (0, 5), (0, 6), (0, 7), (0, 8), (0, 9), (0, 10),
+    (0, 11), (0, 12), (0, 13), (0, 14), (0, 15),
+    # Row 1: Number row
+    (1, 1), (1, 2), (1, 3), (1, 4), (1, 5), (1, 6), (1, 7), (1, 8), (1, 9), (1, 10),
+    (1, 11), (1, 12), (1, 13), (1, 15),
+    # Row 2: QWERTY row
+    (2, 1), (2, 2), (2, 3), (2, 4), (2, 5), (2, 6), (2, 7), (2, 8), (2, 9), (2, 10),
+    (2, 11), (2, 12), (2, 13), (2, 14),
+    # Row 3: ASDF row
+    (3, 1), (3, 2), (3, 3), (3, 4), (3, 5), (3, 6), (3, 7), (3, 8), (3, 9), (3, 10),
+    (3, 11), (3, 12), (3, 13),
+    # Row 4: ZXCV row
+    (4, 1), (4, 2), (4, 3), (4, 4), (4, 5), (4, 6), (4, 7), (4, 8), (4, 9), (4, 10),
+    (4, 11), (4, 12), (4, 15),
+    # Row 5: Space row
+    (5, 1), (5, 2), (5, 3), (5, 5), (5, 9), (5, 11), (5, 12), (5, 13), (5, 14), (5, 15),
+]
+
+# Calculate actual keyboard bounds for proper image mapping
+min_col = min(col for _, col in ACTUAL_KEYS)  # 1
+max_col = max(col for _, col in ACTUAL_KEYS)  # 15
+actual_width = max_col - min_col + 1  # 15
+
+def set_effect(effect):
+    """Set keyboard effect"""
+    try:
+        if effect == "reactive":
+            with open(f"{DEVICE}/matrix_effect_reactive", "wb") as f:
+                f.write(bytes([255, 255, 255, 2]))
+        else:
+            with open(f"{DEVICE}/matrix_effect_{effect}", "w") as f:
+                f.write("1")
+    except Exception as e:
+        print(f"Error setting effect {effect}: {e}", file=sys.stderr)
+
+def display_image(image_path, preview=True):
+    """Display an image on the keyboard"""
+    try:
+        # Load and resize image to actual keyboard dimensions
+        img = Image.open(image_path)
+        img = img.resize((actual_width, ROWS), Image.Resampling.LANCZOS)
+        img = img.convert('RGB')
+
+        # Preview with chafa if requested
+        if preview:
+            temp_path = "/tmp/keyboard-display.png"
+            img.save(temp_path)
+            os.system(f"chafa --size={actual_width*2}x{ROWS*2} {temp_path}")
+            print()
+
+        # Set to custom mode
+        with open(f"{DEVICE}/matrix_effect_custom", "w") as f:
+            f.write("1")
+
+        # Map image to actual key positions
+        for row, col in ACTUAL_KEYS:
+            # Map col position to image x coordinate
+            img_x = col - min_col
+            if 0 <= img_x < actual_width:
+                r, g, b = img.getpixel((img_x, row))
+                frame_data = bytes([row, col, col, r, g, b])
+                with open(f"{DEVICE}/matrix_custom_frame", "wb") as f:
+                    f.write(frame_data)
+
+        print(f"Displaying {image_path} on keyboard. Press Ctrl+C to restore.")
+
+        # Wait for user interrupt
+        try:
+            while True:
+                pass
+        except KeyboardInterrupt:
+            print("\nRestoring keyboard...")
+
+    except Exception as e:
+        print(f"Error: {e}", file=sys.stderr)
+    finally:
+        set_effect("reactive")
+
+if __name__ == "__main__":
+    if len(sys.argv) < 2:
+        print("Usage: keyboard-image <image-file>")
+        sys.exit(1)
+
+    display_image(sys.argv[1])

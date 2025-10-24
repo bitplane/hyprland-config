@@ -3,7 +3,7 @@
     "height": 10,
     "modules-left": ["custom/arch", "hyprland/workspaces" , "memory"],
     "modules-center": ["custom/playerctl"],
-    "modules-right": ["bluetooth", "backlight","pulseaudio", "battery", "network","clock", "tray"],
+    "modules-right": ["bluetooth", "backlight","pulseaudio", "battery", "custom/wifi","clock", "tray"],
     "custom/arch": {
       "format": "🪟",
       "on-click": "wofi --show drun"
@@ -65,11 +65,11 @@
       "interface": "wlp2s0",
       "format": "{ifname}",
       "format-wifi": "{icon}",
-      "tooltip-format-wifi": "Connected to: {essid}\nSignal Strength: {signalStrength}%",
+      "tooltip-format-wifi": "Connected to: {essid}\nSignal: {signaldBm} dBm",
       "format-icons": {
         "wifi": [
           "<span color='#ff6b6b'>▂</span><span color='#666'>▄▆█</span>",
-          "<span color='#ffa500'>▂▄</span><span color='#666'>▆█</span>", 
+          "<span color='#ffa500'>▂▄</span><span color='#666'>▆█</span>",
           "<span color='#ffff00'>▂▄▆</span><span color='#666'>█</span>",
           "<span color='#90ee90'>▂▄▆█</span>"
         ],
@@ -121,6 +121,13 @@
        "Paused": "<span foreground='#bb9af7'>⏸</span>",
        "Playing": "<span foreground='#bb9af7'>▶</span>"
      }
-     }
+     },
+    "custom/wifi": {
+     "exec": "wifi-signal",
+     "return-type": "json",
+     "interval": 5,
+     "format": "{}",
+     "on-click": "nm-connection-editor"
+    }
 
 }

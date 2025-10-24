@@ -39,7 +39,18 @@ window#waybar {
   color: #2ac3de;
 }
 
-#clock, #backlight, #bluetooth, #custom-cava,#temperature, #cpu, #pulseaudio, #network, #battery , #tray, #memory ,#custom-playerctl{
+#clock, #backlight, #bluetooth, #temperature, #cpu, #pulseaudio, #network, #battery, #tray, #memory {
+  border-radius: 10px;
+  background-color: #191a24;
+  color: #c0caf5;
+  margin-top: 15px;
+  padding-left: 9px;
+  padding-right: 9px;
+  margin-right: 15px;
+}
+
+/* Custom modules */
+#custom-playerctl, #custom-wifi, #custom-arch, #custom-cava {
   border-radius: 10px;
   background-color: #191a24;
   color: #c0caf5;

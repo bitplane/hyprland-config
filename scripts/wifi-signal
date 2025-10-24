@@ -1,0 +1,29 @@
+#!/bin/bash
+# Get wifi signal strength from nmcli
+
+signal=$(nmcli -f IN-USE,SIGNAL device wifi | grep "*" | awk '{print $2}')
+
+if [ -z "$signal" ]; then
+    echo '{"text": "📵", "tooltip": "Not connected", "class": "disconnected"}'
+else
+    # Determine icon based on signal strength
+    if [ "$signal" -ge 75 ]; then
+        icon="▂▄▆█"
+        color="#90ee90"
+        class="excellent"
+    elif [ "$signal" -ge 50 ]; then
+        icon="▂▄▆"
+        color="#ffff00"
+        class="good"
+    elif [ "$signal" -ge 25 ]; then
+        icon="▂▄"
+        color="#ffa500"
+        class="fair"
+    else
+        icon="▂"
+        color="#ff6b6b"
+        class="poor"
+    fi
+
+    echo "{\"text\": \"<span color='$color'>$icon</span>\", \"tooltip\": \"Signal: ${signal}%\", \"class\": \"$class\"}"
+fi

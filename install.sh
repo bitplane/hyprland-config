@@ -19,10 +19,11 @@ ln -sf "$(pwd)/config/waybar/style.css" ~/.config/waybar/style.css
 # Install scripts
 echo "Installing scripts..."
 chmod +x scripts/*
-ln -sf "$(pwd)/scripts/window-switcher" ~/.local/bin/window-switcher
-ln -sf "$(pwd)/scripts/screen-record" ~/.local/bin/screen-record
-ln -sf "$(pwd)/scripts/weather-widget" ~/.local/bin/weather-widget
-ln -sf "$(pwd)/scripts/keyboard-mapper.py" ~/.local/bin/keyboard-mapper
+for script in scripts/*; do
+    script_name=$(basename "$script" .py)
+    ln -sf "$(pwd)/$script" ~/.local/bin/"$script_name"
+    echo "  Linked $script_name"
+done
 
 # Check if hyprworm is available
 if command -v hyprworm &> /dev/null; then
