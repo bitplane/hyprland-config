@@ -34,7 +34,7 @@ fi
 
 # Check critical dependencies
 echo "Checking dependencies..."
-DEPS=(hyprland waybar kitty fuzzel mako grim slurp wf-recorder wl-copy wtype rofimoji)
+DEPS=(hyprland waybar kitty fuzzel mako grim slurp wf-recorder wl-copy wtype rofimoji ncal)
 MISSING=()
 
 for dep in "${DEPS[@]}"; do

@@ -50,7 +50,7 @@ window#waybar {
 }
 
 /* Custom modules */
-#custom-playerctl, #custom-wifi, #custom-arch, #custom-cava {
+#custom-playerctl, #custom-wifi, #custom-arch, #custom-cava, #custom-clock {
   border-radius: 10px;
   background-color: #191a24;
   color: #c0caf5;

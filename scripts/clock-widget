@@ -1,0 +1,20 @@
+#!/bin/bash
+# Clock widget with emoji and calendar tooltip
+
+emoji=$(clock-emoji)
+time=$(date +'%H:%M')
+month=$(date +'%B %Y')
+
+if command -v ncal &>/dev/null; then
+    today=$(date +%-d)
+    # Highlight today's date with Pango markup
+    tooltip=$(ncal | sed 's/^/  /' | sed "s/\b${today}\b/<span color='#ff6699'><b>${today}<\/b><\/span>/")
+elif command -v cal &>/dev/null; then
+    today=$(date +%-d)
+    tooltip=$(cal | sed 's/^/  /' | sed "s/\b${today}\b/<span color='#ff6699'><b>${today}<\/b><\/span>/")
+else
+    tooltip="$month
+(install ncal package for calendar)"
+fi
+
+jq -nc --arg text "<span color='#b69bf1'>$emoji</span> $time" --arg tooltip "$tooltip" '{text: $text, tooltip: $tooltip}'

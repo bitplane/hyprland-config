@@ -3,7 +3,7 @@
     "height": 10,
     "modules-left": ["custom/arch", "hyprland/workspaces" , "memory"],
     "modules-center": ["custom/playerctl"],
-    "modules-right": ["backlight","pulseaudio", "battery", "custom/wifi","clock", "tray"],
+    "modules-right": ["backlight","pulseaudio", "battery", "custom/wifi","custom/clock", "tray"],
     "custom/arch": {
       "format": "🪟",
       "on-click": "wofi --show drun"
@@ -37,16 +37,12 @@
              		"10": "10"
           }
     },
-    "clock": {
-      "format": "<span color='#b69bf1'>🕐</span> {:%H:%M}",
-      "format-alt": "<span foreground='#b69bf1'>📅</span> {:%Y-%m-%d %H:%M}",
-      "tooltip-format": "<big>{:%Y %B}</big>\n<tt><small>{calendar}</small></tt>",
-      "calendar": {
-        "mode": "month",
-        "format": {
-          "today": "<span color='#ff6699'><b><u>{}</u></b></span>"
-        }
-      }
+    "custom/clock": {
+      "exec": "clock-widget",
+      "return-type": "json",
+      "interval": 30,
+      "format": "{}",
+      "on-click": "gnome-calendar"
     },
     "backlight": {
       "device": "amdgpu_bl1",

@@ -1,0 +1,47 @@
+#!/bin/bash
+# Return clock emoji for current time (to nearest half hour)
+
+hour=$(date +%-I)  # 12-hour format without leading zero
+minute=$(date +%-M)
+
+# Round to nearest half hour
+if [ $minute -lt 15 ]; then
+    # On the hour
+    half=0
+elif [ $minute -lt 45 ]; then
+    # Half past
+    half=1
+else
+    # Next hour
+    half=0
+    hour=$((hour + 1))
+    if [ $hour -gt 12 ]; then
+        hour=1
+    fi
+fi
+
+# Clock emojis: 12, 12:30, 1, 1:30, 2, 2:30, ... 11, 11:30
+clocks=(
+    "🕛" "🕧"  # 12, 12:30
+    "🕐" "🕜"  # 1, 1:30
+    "🕑" "🕝"  # 2, 2:30
+    "🕒" "🕞"  # 3, 3:30
+    "🕓" "🕟"  # 4, 4:30
+    "🕔" "🕠"  # 5, 5:30
+    "🕕" "🕡"  # 6, 6:30
+    "🕖" "🕢"  # 7, 7:30
+    "🕗" "🕣"  # 8, 8:30
+    "🕘" "🕤"  # 9, 9:30
+    "🕙" "🕥"  # 10, 10:30
+    "🕚" "🕦"  # 11, 11:30
+)
+
+# Calculate index: (hour - 1) * 2 + half
+# But hour 12 should be index 0
+if [ $hour -eq 12 ]; then
+    index=$half
+else
+    index=$(( (hour - 1) * 2 + half ))
+fi
+
+echo "${clocks[$index]}"
