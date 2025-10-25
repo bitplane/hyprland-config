@@ -87,7 +87,8 @@
     "battery": {
       "format": "<span color='#a8cd76'>🔋</span> {capacity}%",
       "format-icons": ["🪫", "🪫", "🔋", "🔋", "🔋", "🔋", "🔋", "🔋", "🔋", "🔋", "🔋"],
-      "format-charging": "<span color='#a8cd76'>⚡</span> {capacity}%"
+      "format-charging": "<span color='#a8cd76'>⚡</span> {capacity}%",
+      "on-click": "gnome-power-statistics"
     },
     "pulseaudio": {
       "on-click": "pactl set-sink-mute @DEFAULT_SINK@ toggle",
