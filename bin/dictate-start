@@ -1,0 +1,48 @@
+#!/bin/bash
+# Start recording on key press
+
+CACHE_DIR="$HOME/.cache/dictate"
+WHISPER_PIDFILE="$CACHE_DIR/whisper.pid"
+RECORDING_PIDFILE="$CACHE_DIR/recording.pid"
+
+# Create cache directory structure
+mkdir -p "$CACHE_DIR/$(date +%Y-%m)"
+
+# Start Whisper server if not running
+if [ -f "$WHISPER_PIDFILE" ]; then
+    pid=$(cat "$WHISPER_PIDFILE")
+    if ! kill -0 "$pid" 2>/dev/null; then
+        # Stale pidfile, remove it
+        rm -f "$WHISPER_PIDFILE"
+    fi
+fi
+
+if [ ! -f "$WHISPER_PIDFILE" ]; then
+    # Start whisper.cpp server in background
+    MODEL="$CACHE_DIR/models/ggml-base.bin"
+    nohup whisper-server \
+        --model "$MODEL" \
+        --host 127.0.0.1 \
+        --port 8000 \
+        --inference-path "/v1/audio/transcriptions" \
+        --convert \
+        > "$CACHE_DIR/whisper.log" 2>&1 &
+    echo $! > "$WHISPER_PIDFILE"
+    # Wait for server to be ready
+    sleep 3
+fi
+
+# Generate filename
+TIMESTAMP=$(date +%Y-%m-%d_%H:%M:%S)
+YEAR_MONTH=$(date +%Y-%m)
+WAVFILE="$CACHE_DIR/$YEAR_MONTH/$TIMESTAMP.wav"
+
+# Start recording (16kHz mono, format for Whisper)
+sox -d -r 16000 -c 1 "$WAVFILE" &
+SOX_PID=$!
+
+# Save sox PID and filename
+echo "$SOX_PID $WAVFILE" > "$RECORDING_PIDFILE"
+
+# Set A key red
+keyboard-notify --color 255,0,0 A
