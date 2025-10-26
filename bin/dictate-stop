@@ -15,9 +15,6 @@ fi
 read SOX_PID WAVFILE < "$RECORDING_PIDFILE"
 rm -f "$RECORDING_PIDFILE"
 
-# Set A key amber (processing)
-keyboard-notify --color 255,191,0 A
-
 # Kill sox recording
 kill $SOX_PID 2>/dev/null || true
 sleep 0.1
@@ -27,6 +24,9 @@ if [ ! -s "$WAVFILE" ]; then
     keyboard-reset
     exit 1
 fi
+
+# Set A key green (transcription starting)
+keyboard-notify --color 0,255,0 A
 
 # Send to Whisper server for transcription (OpenAI-compatible endpoint)
 RESPONSE=$(curl -s -X POST -F "file=@$WAVFILE" http://127.0.0.1:8000/v1/audio/transcriptions)
@@ -46,9 +46,8 @@ RELATIVE_FILE=$(basename $(dirname "$WAVFILE"))/$(basename "$WAVFILE")
 # Append to TSV file
 echo -e "$RELATIVE_FILE\t$TEXT" >> "$TSV_FILE"
 
-# Set A key green (success)
-keyboard-notify --color 0,255,0 A
-sleep 0.3
+# Set A key blue (typing)
+keyboard-notify --color 0,100,255 A
 
 # Type the text
 wtype "$TEXT"

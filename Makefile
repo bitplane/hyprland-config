@@ -53,8 +53,9 @@ whisper-cpp:
 		fi; \
 		cd $(WHISPER_BUILD) && \
 		cmake -B build -DWHISPER_BUILD_SERVER=ON && \
-		cmake --build build --config Release; \
-		cp $(WHISPER_BUILD)/build/bin/whisper-server bin/whisper-server; \
+		cmake --build build --config Release && \
+		cd $(PWD) && \
+		cp $(WHISPER_BUILD)/build/bin/whisper-server bin/whisper-server && \
 		echo "✓ whisper-server built"; \
 	else \
 		echo "✓ whisper-server already built"; \
