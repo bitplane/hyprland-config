@@ -1,0 +1,148 @@
+#!/usr/bin/env python3
+"""Light up specific keys on the keyboard by their row,col positions
+Usage: keyboard-notify <keys> [--color R,G,B] [--bg-color R,G,B]
+
+Keys format: space-separated row,col pairs or just keys like "12345"
+Examples:
+  keyboard-notify 1,2 1,3 1,4                    # Light up specific positions
+  keyboard-notify 12345                          # Light up keys 1,2,3,4,5
+  keyboard-notify --color 255,0,0 123            # Red color for specified keys
+  keyboard-notify --color 255,0,0 --bg-color 128,40,0 123  # Red keys on orange background
+"""
+
+import sys
+import glob
+import os
+import random
+
+# Actual key positions (keys that exist on the physical keyboard)
+ACTUAL_KEYS = {
+    # Row 0: Function keys
+    (0, 1), (0, 2), (0, 3), (0, 4), (0, 5), (0, 6), (0, 7), (0, 8), (0, 9), (0, 10),
+    (0, 11), (0, 12), (0, 13), (0, 14), (0, 15),
+    # Row 1: Number row
+    (1, 1), (1, 2), (1, 3), (1, 4), (1, 5), (1, 6), (1, 7), (1, 8), (1, 9), (1, 10),
+    (1, 11), (1, 12), (1, 13), (1, 15),
+    # Row 2: QWERTY row
+    (2, 1), (2, 2), (2, 3), (2, 4), (2, 5), (2, 6), (2, 7), (2, 8), (2, 9), (2, 10),
+    (2, 11), (2, 12), (2, 13), (2, 14),
+    # Row 3: ASDF row
+    (3, 1), (3, 2), (3, 3), (3, 4), (3, 5), (3, 6), (3, 7), (3, 8), (3, 9), (3, 10),
+    (3, 11), (3, 12), (3, 13),
+    # Row 4: ZXCV row
+    (4, 1), (4, 2), (4, 3), (4, 4), (4, 5), (4, 6), (4, 7), (4, 8), (4, 9), (4, 10),
+    (4, 11), (4, 12), (4, 15),
+    # Row 5: Space row
+    (5, 1), (5, 2), (5, 3), (5, 5), (5, 9), (5, 11), (5, 12), (5, 13), (5, 14), (5, 15),
+}
+
+# Full keyboard character map (from keyboard-mapper)
+CHAR_POSITIONS = {
+    # Row 0: Function keys
+    "ESC": (0, 1), "F1": (0, 2), "F2": (0, 3), "F3": (0, 4), "F4": (0, 5),
+    "F5": (0, 6), "F6": (0, 7), "F7": (0, 8), "F8": (0, 9), "F9": (0, 10),
+    "F10": (0, 11), "F11": (0, 12), "F12": (0, 13), "DEL": (0, 14), "POWER": (0, 15),
+
+    # Row 1: Number row
+    "`": (1, 1), "1": (1, 2), "2": (1, 3), "3": (1, 4), "4": (1, 5),
+    "5": (1, 6), "6": (1, 7), "7": (1, 8), "8": (1, 9), "9": (1, 10),
+    "0": (1, 11), "-": (1, 12), "=": (1, 15), "BACKSPACE": (1, 15),
+
+    # Row 2: QWERTY row
+    "TAB": (2, 1), "Q": (2, 2), "W": (2, 3), "E": (2, 4), "R": (2, 5),
+    "T": (2, 6), "Y": (2, 7), "U": (2, 8), "I": (2, 9), "O": (2, 10),
+    "P": (2, 11), "[": (2, 12), "]": (2, 13), "ENTER": (2, 14),
+
+    # Row 3: ASDF row
+    "CAPS": (3, 1), "A": (3, 2), "S": (3, 3), "D": (3, 4), "F": (3, 5),
+    "G": (3, 6), "H": (3, 7), "J": (3, 8), "K": (3, 9), "L": (3, 10),
+    ";": (3, 11), "'": (3, 12), "#": (3, 13),
+
+    # Row 4: ZXCV row
+    "SHIFT": (4, 1), "\\": (4, 2), "Z": (4, 3), "X": (4, 4), "C": (4, 5), "V": (4, 6),
+    "B": (4, 7), "N": (4, 8), "M": (4, 9), ",": (4, 10), ".": (4, 11),
+    "/": (4, 12), "RSHIFT": (4, 15),
+
+    # Row 5: Space row
+    "CTRL": (5, 1), "FN": (5, 2), "WIN": (5, 3), "ALT": (5, 5),
+    "RALT": (5, 9), "RCTRL": (5, 11), "LEFT": (5, 12), "UP": (5, 13),
+    "RIGHT": (5, 14), "DOWN": (5, 15)
+}
+
+def find_razer_device():
+    """Find the Razer keyboard device path"""
+    devices = glob.glob("/sys/bus/hid/drivers/razerkbd/0003:*")
+    for device in devices:
+        if os.path.exists(f"{device}/matrix_effect_none"):
+            return device
+    return None
+
+def parse_keys(args):
+    """Parse key arguments - either row,col pairs or character strings"""
+    keys = []
+    for arg in args:
+        if ',' in arg:
+            # It's a row,col pair
+            row, col = map(int, arg.split(','))
+            keys.append((row, col))
+        else:
+            # It's character string - try to map each character
+            for char in arg:
+                char_upper = char.upper()
+                if char_upper in CHAR_POSITIONS:
+                    keys.append(CHAR_POSITIONS[char_upper])
+    return keys
+
+def main():
+    # Parse arguments
+    color = (255, 0, 0)  # Default red for highlighted keys
+    bg_color = None  # Default no background (off)
+    key_args = []
+
+    i = 1
+    while i < len(sys.argv):
+        if sys.argv[i] == '--color' and i + 1 < len(sys.argv):
+            r, g, b = map(int, sys.argv[i + 1].split(','))
+            color = (r, g, b)
+            i += 2
+        elif sys.argv[i] == '--bg-color' and i + 1 < len(sys.argv):
+            r, g, b = map(int, sys.argv[i + 1].split(','))
+            bg_color = (r, g, b)
+            i += 2
+        else:
+            key_args.append(sys.argv[i])
+            i += 1
+
+    keys_to_light = parse_keys(key_args) if key_args else []
+
+    device = find_razer_device()
+    if not device:
+        print("Error: Could not find Razer keyboard device", file=sys.stderr)
+        sys.exit(1)
+
+    # Set to custom mode
+    with open(f"{device}/matrix_effect_custom", "w") as f:
+        f.write("1")
+
+    # Convert to list and shuffle for random order
+    keys_list = list(ACTUAL_KEYS)
+    random.shuffle(keys_list)
+
+    # Light up all keys - highlight specified ones, use bg_color for others
+    for row, col in keys_list:
+        if (row, col) in keys_to_light:
+            # Highlight color
+            r, g, b = color
+        elif bg_color:
+            # Background color
+            r, g, b = bg_color
+        else:
+            # Off
+            r, g, b = 0, 0, 0
+
+        frame_data = bytes([row, col, col, r, g, b])
+        with open(f"{device}/matrix_custom_frame", "wb") as f:
+            f.write(frame_data)
+
+if __name__ == "__main__":
+    main()

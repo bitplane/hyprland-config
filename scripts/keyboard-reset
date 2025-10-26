@@ -1,0 +1,23 @@
+#!/usr/bin/env python3
+"""Reset keyboard to reactive mode"""
+
+import sys
+import glob
+import os
+
+def find_razer_device():
+    """Find the Razer keyboard device path"""
+    devices = glob.glob("/sys/bus/hid/drivers/razerkbd/0003:*")
+    for device in devices:
+        if os.path.exists(f"{device}/matrix_effect_none"):
+            return device
+    return None
+
+device = find_razer_device()
+if not device:
+    print("Error: Could not find Razer keyboard device", file=sys.stderr)
+    sys.exit(1)
+
+# Reactive needs RGB color + speed (1-4)
+with open(f"{device}/matrix_effect_reactive", "wb") as f:
+    f.write(bytes([255, 255, 255, 2]))  # White, medium speed

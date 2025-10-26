@@ -1,0 +1,29 @@
+#!/bin/bash
+# Get the current process's tmux window by walking up the PPID tree
+
+get_tmux_window_for_pid() {
+    local pid=$1
+
+    while [ "$pid" != "1" ] && [ -n "$pid" ]; do
+        # Check if this PID has TMUX environment variable
+        if [ -f "/proc/$pid/environ" ]; then
+            tmux_env=$(tr '\0' '\n' < /proc/$pid/environ 2>/dev/null | grep '^TMUX=' | head -1)
+            if [ -n "$tmux_env" ]; then
+                # Found tmux session, get the window for this PID
+                tmux_pane=$(tmux list-panes -a -F '#{pane_pid} #{window_index}' 2>/dev/null | grep "^$pid " | awk '{print $2}')
+                if [ -n "$tmux_pane" ]; then
+                    echo "$tmux_pane"
+                    return 0
+                fi
+            fi
+        fi
+
+        # Move up to parent
+        pid=$(ps -o ppid= -p "$pid" 2>/dev/null | tr -d ' ')
+    done
+
+    return 1
+}
+
+# Start with calling process's PID (PPID of this script)
+get_tmux_window_for_pid $PPID
