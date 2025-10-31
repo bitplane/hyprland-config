@@ -1,0 +1,44 @@
+#!/bin/bash
+# Monitor battery level with progressive red warning
+
+CHECK_INTERVAL=60  # Check every 60 seconds
+STATEFILE="/tmp/battery-monitor.state"
+
+is_red=false
+[ -f "$STATEFILE" ] && is_red=true
+
+while true; do
+    # Get battery percentage
+    capacity=$(cat /sys/class/power_supply/BAT*/capacity 2>/dev/null | head -1)
+    status=$(cat /sys/class/power_supply/BAT*/status 2>/dev/null | head -1)
+
+    # If battery < 25% and not charging, show progressive red
+    if [ "$capacity" -lt 25 ] && [ "$status" != "Charging" ] && [ "$status" != "Full" ]; then
+        # Calculate red intensity: 0 at 25%, 255 at 5% or below
+        if [ "$capacity" -le 5 ]; then
+            red=255
+        else
+            # Linear scale from 0 at 25% to 255 at 5%
+            # Formula: 255 * (25 - capacity) / 20
+            red=$(( 255 * (25 - capacity) / 20 ))
+        fi
+
+        # Set keyboard with calculated red intensity
+        keyboard-notify --bg-color $red,0,0
+
+        # Mark as red
+        touch "$STATEFILE"
+        is_red=true
+
+    # If charging or over 25%, reset keyboard if it was red
+    elif [ "$is_red" = true ]; then
+        # Flash green once to show recovery
+        keyboard-notify --bg-color 0,255,0
+        sleep 1
+        keyboard-reset
+        rm -f "$STATEFILE"
+        is_red=false
+    fi
+
+    sleep $CHECK_INTERVAL
+done
