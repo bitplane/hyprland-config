@@ -20,7 +20,7 @@ while true; do
     CHECK_INTERVAL=$(( capacity / 3 ))
 
     # If discharging, show battery as color
-    if [ "$status" != "Charging" ] && [ "$status" != "Full" ]; then
+    if [ "$status" = "Discharging" ]; then
         if [ "$capacity" -gt 80 ]; then
             # >80%: Full green
             keyboard-notify --bg-color 0,255,0
@@ -46,8 +46,8 @@ while true; do
 
     # If charging or full, reset keyboard if it was colored
     elif [ "$was_colored" = true ]; then
-        # Flash green once to show charging
-        keyboard-notify --bg-color 0,255,0
+        # Flash cyan once to show charging
+        keyboard-notify --bg-color 0,128,128
         sleep 1
         keyboard-reset
         rm -f "$STATEFILE"
