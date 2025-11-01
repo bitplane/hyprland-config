@@ -18,6 +18,15 @@ install: check-deps whisper-cpp
 	mkdir -p $(BIN_DIR)
 	mkdir -p $(CACHE_DIR)/models
 
+	# Install Python dependencies (pyudev for battery-monitor)
+	@echo "Installing Python dependencies..."
+	@if command -v pip3 >/dev/null 2>&1; then \
+		pip3 install --user pyudev; \
+		echo "✓ pyudev installed"; \
+	else \
+		echo "✗ pip3 not found, please install python3-pip"; \
+	fi
+
 	# Link configs
 	ln -sf $(PWD)/config/hypr/hyprland.conf $(CONFIG_DIR)/hypr/hyprland.conf
 	ln -sf $(PWD)/config/waybar/config $(CONFIG_DIR)/waybar/config

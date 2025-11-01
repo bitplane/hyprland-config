@@ -1,58 +1,208 @@
-#!/bin/bash
-# Monitor battery level and show as keyboard color
+#!/usr/bin/env python3
+"""
+Battery monitor with event-driven architecture.
+Uses pyudev for AC plug/unplug events, polling only while discharging.
+"""
 
-STATEFILE="/tmp/battery-monitor.state"
+import subprocess
+import time
+import os
+import signal
+import sys
+from pathlib import Path
+from threading import Thread, Event
 
-was_colored=false
-[ -f "$STATEFILE" ] && was_colored=true
+try:
+    import pyudev
+except ImportError:
+    print("Error: pyudev not installed. Install with: pip install pyudev", file=sys.stderr)
+    sys.exit(1)
 
-while true; do
-    # Get battery percentage
-    capacity=$(cat /sys/class/power_supply/BAT*/capacity 2>/dev/null | head -1)
-    status=$(cat /sys/class/power_supply/BAT*/status 2>/dev/null | head -1)
 
-    # Calculate dynamic check interval: battery / 3
-    # At 100%: ~33 seconds
-    # At 50%: ~16 seconds
-    # At 20%: ~6 seconds
-    # At 10%: ~3 seconds (fast!)
-    # At 5%: ~1.6 seconds (very fast!)
-    CHECK_INTERVAL=$(( capacity / 3 ))
+DEBUG = "--debug" in sys.argv
+STATEFILE = Path("/tmp/battery-monitor.state")
+BATTERY_PATH = Path("/sys/class/power_supply/BAT0")
 
-    # If discharging, show battery as color
-    if [ "$status" = "Discharging" ]; then
-        if [ "$capacity" -gt 80 ]; then
-            # >80%: Full green
-            keyboard-notify --bg-color 0,255,0
-        elif [ "$capacity" -gt 20 ]; then
-            # 20-80%: Gradient from red (20%) to green (80%)
-            # At 20%: red=255, green=0
-            # At 80%: red=0, green=255
-            # Linear interpolation
-            range=60  # 80 - 20
-            pos=$((capacity - 20))
-            green=$((255 * pos / range))
-            red=$((255 - green))
-            keyboard-notify --bg-color $red,$green,0
-        else
-            # <=20%: Flash red/black
-            keyboard-notify --bg-color 255,0,0
-            keyboard-notify --bg-color 0,0,0
-            keyboard-notify --bg-color 255,0,0
-        fi
 
-        touch "$STATEFILE"
-        was_colored=true
+def debug(msg):
+    """Print debug message if --debug flag is set."""
+    if DEBUG:
+        print(f"[DEBUG] {msg}", file=sys.stderr)
 
-    # If charging or full, reset keyboard if it was colored
-    elif [ "$was_colored" = true ]; then
-        # Flash cyan once to show charging
-        keyboard-notify --bg-color 0,128,128
-        sleep 1
-        keyboard-reset
-        rm -f "$STATEFILE"
-        was_colored=false
-    fi
 
-    sleep $CHECK_INTERVAL
-done
+def keyboard_notify(color):
+    """Set keyboard background color (R,G,B)."""
+    debug(f"keyboard_notify({color[0]},{color[1]},{color[2]})")
+    subprocess.run(["keyboard-notify", "--bg-color", f"{color[0]},{color[1]},{color[2]}"],
+                   check=False, stderr=subprocess.DEVNULL)
+
+
+def keyboard_reset():
+    """Reset keyboard to default."""
+    debug("keyboard_reset()")
+    subprocess.run(["keyboard-reset"], check=False, stderr=subprocess.DEVNULL)
+
+
+def get_battery_status():
+    """Get battery capacity and status."""
+    try:
+        capacity = int((BATTERY_PATH / "capacity").read_text().strip())
+        status = (BATTERY_PATH / "status").read_text().strip()
+        debug(f"Battery: {capacity}% {status}")
+        return capacity, status
+    except Exception as e:
+        debug(f"Error reading battery: {e}")
+        return None, None
+
+
+def show_battery_color():
+    """Display battery level as keyboard color."""
+    capacity, _ = get_battery_status()
+    if capacity is None:
+        return
+
+    if capacity > 80:
+        # >80%: Full green
+        keyboard_notify((0, 255, 0))
+    elif capacity > 20:
+        # 20-80%: Gradient from red (20%) to green (80%)
+        pos = capacity - 20
+        green = int(255 * pos / 60)
+        red = 255 - green
+        keyboard_notify((red, green, 0))
+    else:
+        # ≤20%: Flash red/black
+        keyboard_notify((255, 0, 0))
+        keyboard_notify((0, 0, 0))
+        keyboard_notify((255, 0, 0))
+
+
+class BatteryMonitor:
+    def __init__(self):
+        self.polling_thread = None
+        self.stop_polling = Event()
+
+    def start_polling(self):
+        """Start background polling loop for battery updates."""
+        debug("Starting polling loop")
+        self.stop_polling.clear()
+
+        if self.polling_thread and self.polling_thread.is_alive():
+            debug("Stopping existing polling thread")
+            self.stop_polling.set()
+            self.polling_thread.join(timeout=2)
+
+        self.polling_thread = Thread(target=self._poll_loop, daemon=True)
+        self.polling_thread.start()
+        debug("Polling loop started")
+
+    def _poll_loop(self):
+        """Polling loop that runs while discharging."""
+        while not self.stop_polling.is_set():
+            capacity, _ = get_battery_status()
+            if capacity is None:
+                break
+
+            show_battery_color()
+
+            # Constant 30s interval until critical (<20%), then speed up
+            if capacity > 20:
+                interval = 30
+            else:
+                # At critical levels, flash faster as battery drains
+                # 20%: 6s, 10%: 3s, 5%: 1.6s
+                interval = max(1, capacity // 3)
+
+            debug(f"Next check in {interval}s")
+            self.stop_polling.wait(timeout=interval)
+
+    def stop_polling_loop(self):
+        """Stop the polling loop."""
+        debug("Stopping polling loop")
+        self.stop_polling.set()
+        if self.polling_thread:
+            self.polling_thread.join(timeout=2)
+        debug("Polling loop stopped")
+
+    def handle_state_change(self):
+        """Handle AC plug/unplug events."""
+        capacity, status = get_battery_status()
+        if status is None:
+            return
+
+        debug(f"State change: {status}")
+
+        if status == "Discharging":
+            # Unplugged: show battery color and start polling
+            debug("→ Unplugged: showing battery color and starting polling")
+            show_battery_color()
+            self.start_polling()
+            STATEFILE.touch()
+        else:
+            # Plugged in: flash cyan, reset keyboard, stop polling
+            debug(f"→ Plugged in (status={status})")
+            if STATEFILE.exists():
+                # Only flash cyan if we were previously showing battery color
+                debug("→ Was discharging before, flashing cyan")
+                keyboard_notify((0, 128, 128))
+                time.sleep(1)
+            keyboard_reset()
+            self.stop_polling_loop()
+            STATEFILE.unlink(missing_ok=True)
+
+    def run(self):
+        """Main event loop."""
+        debug("=== Battery Monitor Starting ===")
+        # Initial state - read once at startup
+        capacity, status = get_battery_status()
+        if status == "Discharging":
+            show_battery_color()
+            self.start_polling()
+            STATEFILE.touch()
+
+        # Listen for udev events
+        debug("Starting udev monitor for power_supply events")
+        context = pyudev.Context()
+        monitor = pyudev.Monitor.from_netlink(context)
+        monitor.filter_by(subsystem='power_supply')
+
+        debug("Listening for events...")
+        for device in iter(monitor.poll, None):
+            debug(f"udev event: action={device.action} device={device.sys_name}")
+            if device.action == 'change':
+                # AC0 events tell us plug/unplug
+                if device.sys_name == 'AC0':
+                    # Read AC online status from the event device
+                    ac_online = device.attributes.asstring('online')
+                    debug(f"AC0 online={ac_online}")
+
+                    if ac_online == '0':
+                        # Unplugged
+                        debug("→ AC unplugged: showing battery color and starting polling")
+                        show_battery_color()
+                        self.start_polling()
+                        STATEFILE.touch()
+                    else:
+                        # Plugged in
+                        debug("→ AC plugged in: flash cyan and reset")
+                        if STATEFILE.exists():
+                            keyboard_notify((0, 128, 128))
+                            time.sleep(1)
+                        keyboard_reset()
+                        self.stop_polling_loop()
+                        STATEFILE.unlink(missing_ok=True)
+
+
+def signal_handler(signum, frame):
+    """Clean exit on signals."""
+    keyboard_reset()
+    STATEFILE.unlink(missing_ok=True)
+    sys.exit(0)
+
+
+if __name__ == "__main__":
+    signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGTERM, signal_handler)
+
+    monitor = BatteryMonitor()
+    monitor.run()
