@@ -1,43 +1,57 @@
 #!/bin/bash
-# Monitor battery level with progressive red warning
+# Monitor battery level and show as keyboard color
 
-CHECK_INTERVAL=60  # Check every 60 seconds
 STATEFILE="/tmp/battery-monitor.state"
 
-is_red=false
-[ -f "$STATEFILE" ] && is_red=true
+was_colored=false
+[ -f "$STATEFILE" ] && was_colored=true
 
 while true; do
     # Get battery percentage
     capacity=$(cat /sys/class/power_supply/BAT*/capacity 2>/dev/null | head -1)
     status=$(cat /sys/class/power_supply/BAT*/status 2>/dev/null | head -1)
 
-    # If battery < 25% and not charging, show progressive red
-    if [ "$capacity" -lt 25 ] && [ "$status" != "Charging" ] && [ "$status" != "Full" ]; then
-        # Calculate red intensity: 0 at 25%, 255 at 5% or below
-        if [ "$capacity" -le 5 ]; then
-            red=255
+    # Calculate dynamic check interval: battery / 3
+    # At 100%: ~33 seconds
+    # At 50%: ~16 seconds
+    # At 20%: ~6 seconds
+    # At 10%: ~3 seconds (fast!)
+    # At 5%: ~1.6 seconds (very fast!)
+    CHECK_INTERVAL=$(( capacity / 3 ))
+
+    # If discharging, show battery as color
+    if [ "$status" != "Charging" ] && [ "$status" != "Full" ]; then
+        if [ "$capacity" -gt 80 ]; then
+            # >80%: Full green
+            keyboard-notify --bg-color 0,255,0
+        elif [ "$capacity" -gt 20 ]; then
+            # 20-80%: Gradient from red (20%) to green (80%)
+            # At 20%: red=255, green=0
+            # At 80%: red=0, green=255
+            # Linear interpolation
+            range=60  # 80 - 20
+            pos=$((capacity - 20))
+            green=$((255 * pos / range))
+            red=$((255 - green))
+            keyboard-notify --bg-color $red,$green,0
         else
-            # Linear scale from 0 at 25% to 255 at 5%
-            # Formula: 255 * (25 - capacity) / 20
-            red=$(( 255 * (25 - capacity) / 20 ))
+            # <=20%: Flash red/black
+            keyboard-notify --bg-color 255,0,0
+            keyboard-notify --bg-color 0,0,0
+            keyboard-notify --bg-color 255,0,0
         fi
 
-        # Set keyboard with calculated red intensity
-        keyboard-notify --bg-color $red,0,0
-
-        # Mark as red
         touch "$STATEFILE"
-        is_red=true
+        was_colored=true
 
-    # If charging or over 25%, reset keyboard if it was red
-    elif [ "$is_red" = true ]; then
-        # Flash green once to show recovery
+    # If charging or full, reset keyboard if it was colored
+    elif [ "$was_colored" = true ]; then
+        # Flash green once to show charging
         keyboard-notify --bg-color 0,255,0
         sleep 1
         keyboard-reset
         rm -f "$STATEFILE"
-        is_red=false
+        was_colored=false
     fi
 
     sleep $CHECK_INTERVAL

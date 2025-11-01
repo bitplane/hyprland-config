@@ -85,8 +85,8 @@
       "on-click": "nm-connection-editor"
     },
     "battery": {
-      "format": "<span color='#a8cd76'>🔋</span> {capacity}%",
-      "format-icons": ["🪫", "🪫", "🔋", "🔋", "🔋", "🔋", "🔋", "🔋", "🔋", "🔋", "🔋"],
+      "format": "<span color='#a8cd76'>{icon}</span> {capacity}%",
+      "format-icons": ["🪫", "🪫", "🪫", "🔋", "🔋", "🔋", "🔋", "🔋", "🔋", "🔋", "🔋"],
       "format-charging": "<span color='#a8cd76'>⚡</span> {capacity}%",
       "on-click": "gnome-power-statistics"
     },
