@@ -1,6 +1,5 @@
 {
   "layer": "top",
-    "height": 10,
     "modules-left": ["custom/arch", "hyprland/workspaces" , "memory"],
     "modules-center": ["custom/playerctl"],
     "modules-right": ["backlight","pulseaudio", "battery", "custom/wifi","custom/clock", "tray"],
