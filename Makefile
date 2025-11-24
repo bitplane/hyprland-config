@@ -7,8 +7,8 @@ CACHE_DIR = $(HOME)/.cache/dictate
 BUILD_DIR = ./build
 WHISPER_BUILD = $(BUILD_DIR)/whisper.cpp
 
-# Dependencies
-DEPS = hyprland waybar gnome-terminal fuzzel mako grim slurp wf-recorder wl-copy wtype rofimoji ncal sox curl jq
+# Dependencies (binary:package if different)
+DEPS = hyprland waybar gnome-terminal fuzzel mako:mako-notifier grim slurp wf-recorder wl-copy:wl-clipboard wtype ncal sox curl jq hyprpaper
 
 install: check-deps whisper-cpp
 	@echo "Installing Hyprland configuration..."
@@ -18,11 +18,11 @@ install: check-deps whisper-cpp
 	mkdir -p $(BIN_DIR)
 	mkdir -p $(CACHE_DIR)/models
 
-	# Install Python dependencies (pyudev for battery-monitor)
+	# Install Python dependencies
 	@echo "Installing Python dependencies..."
 	@if command -v pip3 >/dev/null 2>&1; then \
-		pip3 install --user pyudev; \
-		echo "✓ pyudev installed"; \
+		pip3 install pyudev rofimoji; \
+		echo "✓ Python dependencies installed"; \
 	else \
 		echo "✗ pip3 not found, please install python3-pip"; \
 	fi
@@ -73,12 +73,14 @@ whisper-cpp:
 check-deps:
 	@echo "Checking dependencies..."
 	@missing=""; \
-	for dep in $(DEPS); do \
-		if command -v $$dep >/dev/null 2>&1; then \
-			echo "✓ $$dep"; \
+	for entry in $(DEPS); do \
+		bin=$${entry%%:*}; \
+		pkg=$${entry#*:}; \
+		if command -v $$bin >/dev/null 2>&1; then \
+			echo "✓ $$bin"; \
 		else \
-			echo "✗ $$dep (missing)"; \
-			missing="$$missing $$dep"; \
+			echo "✗ $$bin (missing)"; \
+			missing="$$missing $$pkg"; \
 		fi; \
 	done; \
 	if [ -n "$$missing" ]; then \

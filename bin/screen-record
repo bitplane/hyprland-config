@@ -20,8 +20,8 @@ else
         # Full screen with audio
         wf-recorder -a -f "$FILE" &
     else
-        # Full screen without audio
-        wf-recorder -f "$FILE" &
+        # Full screen with audio (default)
+        wf-recorder -a -f "$FILE" &
     fi
     
     echo $! > "$PIDFILE"

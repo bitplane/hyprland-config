@@ -1,0 +1,1 @@
+- don't hard code the username in my hyprland config. use ~

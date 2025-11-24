@@ -11,7 +11,7 @@
 }
 
 window#waybar {
-  background: transparent;
+  background: #000000;
 }
 
 #custom-arch, #workspaces {
