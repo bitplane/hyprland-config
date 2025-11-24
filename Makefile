@@ -8,7 +8,7 @@ BUILD_DIR = ./build
 WHISPER_BUILD = $(BUILD_DIR)/whisper.cpp
 
 # Dependencies (binary:package if different)
-DEPS = hyprland waybar gnome-terminal fuzzel mako:mako-notifier grim slurp wf-recorder wl-copy:wl-clipboard wtype ncal sox curl jq hyprpaper
+DEPS = hyprland waybar gnome-terminal fuzzel mako:mako-notifier grim slurp wf-recorder wl-copy:wl-clipboard wtype wofi thunar ncal sox curl jq hyprpaper
 
 install: check-deps whisper-cpp
 	@echo "Installing Hyprland configuration..."
