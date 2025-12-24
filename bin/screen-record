@@ -7,7 +7,7 @@ if [ -f "$PIDFILE" ]; then
     # Stop recording
     kill $(cat "$PIDFILE")
     rm "$PIDFILE"
-    notify-send "Recording Stopped" "Video saved to ~/Videos/"
+    notify-send -t 2000 "Recording Stopped" "Video saved to ~/Videos/"
 else
     # Start recording
     mkdir -p ~/Videos
@@ -25,5 +25,5 @@ else
     fi
     
     echo $! > "$PIDFILE"
-    notify-send "Recording Started" "Press Super+Shift+R to stop"
+    notify-send -t 2000 "Recording Started" "Press Super+Shift+R to stop"
 fi
