@@ -1,105 +1,43 @@
 # Hyprland Configuration
 
-Complete Hyprland setup for Razer Blade 14 2022 with waybar, RGB keyboard control, and all the bells and whistles.
-
-## Dependencies
-
-### Core Packages
-```bash
-sudo apt install \
-    hyprland \
-    waybar \
-    kitty \
-    fuzzel \
-    mako-notifier \
-    grim \
-    slurp \
-    wf-recorder \
-    wl-clipboard \
-    wtype \
-    rofimoji \
-    brightnessctl \
-    playerctl \
-    blueman \
-    network-manager-gnome \
-    pavucontrol \
-    btop \
-    nautilus \
-    firefox \
-    openrazer-meta \
-    python3-openrazer \
-    libcjson-dev
-```
-
-### Optional Tools
-```bash
-# Window switcher (compiled from source)
-git clone https://github.com/liammmcauliffe/hyprworm.git
-cd hyprworm && make && sudo make install
-
-# Keyboard RGB control
-pip install openrazer[client]
-```
+Hyprland setup with waybar, RGB keyboard control, and all the bells and whistles.
 
 ## Installation
 
-1. Clone this repository:
-   ```bash
-   git clone <repo-url> ~/src/hyprland-config
-   ```
+```bash
+git clone <repo-url> ~/src/hyprland-config
+cd ~/src/hyprland-config
+make install
+```
 
-2. Install dependencies (see above)
-
-3. Run the install script:
-   ```bash
-   cd ~/src/hyprland-config
-   ./install.sh
-   ```
-
-4. Restart Hyprland or logout/login
+The Makefile will check for missing dependencies and tell you what to install.
 
 ## Features
 
-- **Display**: 2560x1440 @ 165Hz with 1.25x scaling
 - **Status Bar**: Waybar with system monitoring, media controls, and network info
-- **Window Management**: Fuzzel launcher, hyprworm window switcher
+- **Window Management**: Fuzzel launcher, wofi app menu
 - **Screenshots**: grim + slurp with Print Screen keybindings
 - **Screen Recording**: wf-recorder with toggle keybinding
 - **RGB Keyboard**: OpenRazer integration with per-key control
 - **Media Keys**: Volume, brightness, playback controls
 - **Notifications**: Mako notification daemon
-- **System Tray**: Integrated in waybar
+- **Voice Dictation**: Whisper-based speech to text
 
 ## Keybindings
 
 | Key Combo | Action |
 |-----------|--------|
-| Super + Q | Terminal (kitty) |
+| Super + Q | Terminal |
 | Super + C | Close window |
-| Super + Shift + C | Force kill window |
-| Super + Space | App launcher (fuzzel) |
+| Super + R | App launcher (wofi) |
+| Super + E | File manager |
 | Super + Period | Emoji picker |
 | Alt + Tab | Window switcher |
 | Print | Screenshot |
 | Shift + Print | Area screenshot |
 | Ctrl + Print | Window screenshot |
 | Super + Shift + R | Toggle screen recording |
+| Super + Ctrl + R | Record selected area |
 | Super + F | Toggle fullscreen |
+| Super + A (hold) | Voice dictation |
 | Media Keys | Volume/brightness/playback |
-
-## File Structure
-
-```
-├── config/
-│   ├── hypr/hyprland.conf
-│   ├── waybar/config
-│   ├── waybar/style.css
-│   └── fuzzel/fuzzel.ini
-├── scripts/
-│   ├── window-switcher
-│   ├── screen-record
-│   ├── weather-widget
-│   └── keyboard-mapper.py
-├── install.sh
-└── README.md
-```
