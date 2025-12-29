@@ -1,0 +1,38 @@
+" Enable mouse support for scrolling and clicking
+set mouse=a
+
+" Use system clipboard
+set clipboard=unnamedplus
+
+" Enable spell checking
+set spell
+set spelllang=en_gb
+
+" Highlight spelling errors
+highlight SpellBad cterm=underline
+
+" Basic settings
+set autoindent
+set tabstop=4
+set shiftwidth=4
+set expandtab
+
+" Enable syntax highlighting
+syntax on
+
+" Set dark background and use a dark-friendly colorscheme
+color industry
+set background=dark " or light if your terminal theme is light
+set colorcolumn=80
+
+" Show matching brackets
+set showmatch
+
+" Search settings
+set incsearch
+set hlsearch
+
+" Enable file type detection
+filetype on
+filetype plugin on
+filetype indent on
