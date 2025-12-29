@@ -14,7 +14,6 @@ install: check-deps whisper-cpp
 	@echo "Installing Hyprland configuration..."
 
 	# Create directories
-	mkdir -p $(CONFIG_DIR)/{hypr,waybar}
 	mkdir -p $(BIN_DIR)
 	mkdir -p $(CACHE_DIR)/models
 
@@ -28,9 +27,12 @@ install: check-deps whisper-cpp
 	fi
 
 	# Link configs
-	ln -sf $(PWD)/config/hypr/hyprland.conf $(CONFIG_DIR)/hypr/hyprland.conf
-	ln -sf $(PWD)/config/waybar/config $(CONFIG_DIR)/waybar/config
-	ln -sf $(PWD)/config/waybar/style.css $(CONFIG_DIR)/waybar/style.css
+	@find $(PWD)/config -type f | while read file; do \
+		dest="$(CONFIG_DIR)/$${file#$(PWD)/config/}"; \
+		mkdir -p "$$(dirname "$$dest")"; \
+		ln -sf "$$file" "$$dest"; \
+		echo "  Linked $$dest"; \
+	done
 
 	# Link scripts
 	chmod +x bin/*
