@@ -42,6 +42,15 @@ install: check-deps whisper-cpp
 		echo "  Linked $$script_name"; \
 	done
 
+	# Link libraries
+	@if [ -d lib ]; then \
+		mkdir -p $(HOME)/.local/lib; \
+		for lib in lib/*; do \
+			ln -sf $(PWD)/$$lib $(HOME)/.local/lib/$$(basename $$lib); \
+		done; \
+		echo "  Linked libraries"; \
+	fi
+
 	# Download Whisper model if needed
 	@if [ ! -f $(CACHE_DIR)/models/ggml-base.bin ]; then \
 		echo "Downloading Whisper base model..."; \
@@ -70,6 +79,14 @@ whisper-cpp:
 		echo "✓ whisper-server built"; \
 	else \
 		echo "✓ whisper-server already built"; \
+	fi
+	@if [ ! -d lib ] && [ -d $(WHISPER_BUILD)/build/src ]; then \
+		mkdir -p lib && \
+		cp $(WHISPER_BUILD)/build/src/libwhisper.so* lib/ && \
+		cd lib && \
+		ln -sf libwhisper.so.* libwhisper.so.1 && \
+		ln -sf libwhisper.so.1 libwhisper.so && \
+		echo "✓ whisper libraries copied"; \
 	fi
 
 check-deps:

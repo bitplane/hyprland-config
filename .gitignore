@@ -1,5 +1,6 @@
 # Build artifacts
 build/
+lib/
 
 # Binaries from whisper.cpp build
 bin/whisper-server

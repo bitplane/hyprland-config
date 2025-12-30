@@ -1,0 +1,13 @@
+[Unit]
+Description=Whisper speech-to-text server
+After=network.target
+
+[Service]
+Type=simple
+Environment=LD_LIBRARY_PATH=%h/.local/lib
+ExecStart=%h/.local/bin/whisper-server --model %h/.cache/dictate/models/ggml-base.bin --host 127.0.0.1 --port 8000 --inference-path /v1/audio/transcriptions --convert
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=default.target
