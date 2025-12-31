@@ -101,7 +101,7 @@ class BatteryMonitor:
         while not self.stop_polling.is_set():
             capacity, _ = get_battery_status()
             if capacity is None:
-                break
+                continue
 
             show_battery_color()
 
