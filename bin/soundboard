@@ -1,0 +1,14 @@
+#!/bin/bash
+# Play a sample into the soundboard sink via wofi picker
+# Usage: soundboard
+
+SAMPLE_DIR=~/.config/soundboard
+
+# Find samples and show picker
+sample=$(find -L "$SAMPLE_DIR" -type f \( -name "*.wav" -o -name "*.mp3" -o -name "*.ogg" -o -name "*.flac" \) -printf "%f\n" 2>/dev/null | sort | wofi --dmenu --prompt "Play sample")
+
+[ -z "$sample" ] && exit 0
+
+# Play to soundboard sink (for mic) and default output (for self)
+paplay --device=soundboard --volume=49152 "$SAMPLE_DIR/$sample" &
+paplay --volume=49152 "$SAMPLE_DIR/$sample"
