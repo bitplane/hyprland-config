@@ -1,4 +1,4 @@
-.PHONY: install clean whisper-cpp check-deps
+.PHONY: install clean whisper-cpp eww check-deps
 
 # Directories
 CONFIG_DIR = $(HOME)/.config
@@ -10,7 +10,7 @@ WHISPER_BUILD = $(BUILD_DIR)/whisper.cpp
 # Dependencies (binary:package if different)
 DEPS = hyprland waybar gnome-terminal fuzzel mako:mako-notifier grim slurp wf-recorder wl-copy:wl-clipboard wtype wofi wob thunar brightnessctl playerctl blueman-applet:blueman gvim:vim-gtk3 ncal sox curl jq hyprpaper pipewire pw-loopback:pipewire
 
-install: check-deps whisper-cpp
+install: check-deps whisper-cpp eww
 	@echo "Installing Hyprland configuration..."
 
 	# Create directories
@@ -87,6 +87,21 @@ whisper-cpp:
 		ln -sf libwhisper.so.* libwhisper.so.1 && \
 		ln -sf libwhisper.so.1 libwhisper.so && \
 		echo "✓ whisper libraries copied"; \
+	fi
+
+eww:
+	@if [ ! -f bin/eww ]; then \
+		echo "Building eww (this takes a few minutes)..."; \
+		echo "Note: requires libgtk-3-dev libdbusmenu-glib-dev libpango1.0-dev"; \
+		mkdir -p $(BUILD_DIR); \
+		if [ ! -d $(BUILD_DIR)/eww ]; then \
+			git clone https://github.com/elkowar/eww.git $(BUILD_DIR)/eww; \
+		fi; \
+		cd $(BUILD_DIR)/eww && cargo build --release && \
+		cp target/release/eww $(PWD)/bin/eww && \
+		echo "✓ eww built"; \
+	else \
+		echo "✓ eww already built"; \
 	fi
 
 check-deps:

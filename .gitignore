@@ -2,9 +2,10 @@
 build/
 lib/
 
-# Binaries from whisper.cpp build
+# Built binaries
 bin/whisper-server
 bin/whisper-cli
+bin/eww
 
 # Python cache
 __pycache__
