@@ -26,6 +26,10 @@ install: check-deps whisper-cpp eww
 		echo "✗ pip3 not found, please install python3-pip"; \
 	fi
 
+	# Clean broken symlinks and empty dirs in config
+	@find $(CONFIG_DIR) -xtype l -delete 2>/dev/null || true
+	@find $(CONFIG_DIR) -type d -empty -delete 2>/dev/null || true
+
 	# Link configs
 	@find $(PWD)/config -type f | while read file; do \
 		dest="$(CONFIG_DIR)/$${file#$(PWD)/config/}"; \
@@ -33,6 +37,16 @@ install: check-deps whisper-cpp eww
 		ln -sf "$$file" "$$dest"; \
 		echo "  Linked $$dest"; \
 	done
+
+	# Generate and link soundboard config
+	@mkdir -p $(BUILD_DIR)
+	@$(PWD)/bin/soundboard-generate
+	@ln -sf $(PWD)/build/soundboard.yuck $(CONFIG_DIR)/eww/soundboard.yuck
+	@echo "  Linked soundboard.yuck (generated)"
+
+	# Clean broken symlinks and empty dirs in bin
+	@find $(BIN_DIR) -xtype l -delete 2>/dev/null || true
+	@find $(BIN_DIR) -type d -empty -delete 2>/dev/null || true
 
 	# Link scripts
 	chmod +x bin/*
@@ -92,12 +106,12 @@ whisper-cpp:
 eww:
 	@if [ ! -f bin/eww ]; then \
 		echo "Building eww (this takes a few minutes)..."; \
-		echo "Note: requires libgtk-3-dev libdbusmenu-glib-dev libpango1.0-dev"; \
+		echo "Note: requires libgtk-3-dev libdbusmenu-glib-dev libpango1.0-dev libgtk-layer-shell-dev"; \
 		mkdir -p $(BUILD_DIR); \
 		if [ ! -d $(BUILD_DIR)/eww ]; then \
 			git clone https://github.com/elkowar/eww.git $(BUILD_DIR)/eww; \
 		fi; \
-		cd $(BUILD_DIR)/eww && cargo build --release && \
+		cd $(BUILD_DIR)/eww && cargo build --release --no-default-features --features=wayland && \
 		cp target/release/eww $(PWD)/bin/eww && \
 		echo "✓ eww built"; \
 	else \

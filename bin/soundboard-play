@@ -1,0 +1,16 @@
+#!/bin/bash
+# Play a soundboard sample to both mic (soundboard sink) and local output
+# Usage: soundboard-play <relative-path-to-sample>
+
+SAMPLE_DIR=~/.config/soundboard
+SAMPLE="$SAMPLE_DIR/$1"
+
+if [ ! -f "$SAMPLE" ]; then
+    echo "Sample not found: $SAMPLE" >&2
+    exit 1
+fi
+
+# Play to soundboard sink (for mic) and default output (for self)
+# Both backgrounded so we return immediately
+paplay --device=soundboard --volume=49152 "$SAMPLE" &
+paplay --volume=49152 "$SAMPLE" &

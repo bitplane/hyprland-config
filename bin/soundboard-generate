@@ -1,0 +1,200 @@
+#!/usr/bin/env python3
+"""
+Generate eww soundboard config from directory structure.
+
+Usage: soundboard-generate [path]
+  path: relative path within ~/.config/soundboard (default: root)
+
+File/dir naming: "0.name.ext" -> "name" (strips leading number and extension)
+Grid fills from center outward: center(back), N, S, W, E, NW, SW, NE, SE...
+"""
+
+import os
+import sys
+import re
+from pathlib import Path
+
+SOUNDBOARD_ROOT = Path.home() / ".config" / "soundboard"
+# Output to build dir (symlinked from ~/.config/eww/soundboard.yuck)
+SCRIPT_DIR = Path(__file__).parent.parent
+OUTPUT_FILE = SCRIPT_DIR / "build" / "soundboard.yuck"
+
+# Spiral fill order from center outward
+# For 3x3: positions relative to center (0,0)
+#   (-1,-1) (0,-1) (1,-1)
+#   (-1, 0) (0, 0) (1, 0)
+#   (-1, 1) (0, 1) (1, 1)
+FILL_ORDER_3x3 = [
+    (0, 0),   # center (back button)
+    (0, -1),  # above
+    (0, 1),   # below
+    (-1, 0),  # left
+    (1, 0),   # right
+    (-1, -1), # NW
+    (-1, 1),  # SW
+    (1, -1),  # NE
+    (1, 1),   # SE
+]
+
+# For 5x5, add outer ring
+FILL_ORDER_5x5_OUTER = [
+    (0, -2),  # above above
+    (0, 2),   # below below
+    (-2, 0),  # left left
+    (2, 0),   # right right
+    (-1, -2), # NW outer
+    (1, -2),  # NE outer
+    (-2, -1), # WN outer
+    (2, -1),  # EN outer
+    (-2, 1),  # WS outer
+    (2, 1),   # ES outer
+    (-1, 2),  # SW outer
+    (1, 2),   # SE outer
+    (-2, -2), # corner NW
+    (2, -2),  # corner NE
+    (-2, 2),  # corner SW
+    (2, 2),   # corner SE
+]
+
+
+def parse_name(filename: str, is_dir: bool = False) -> str:
+    """Strip leading 'N.' prefix and extension (for files only) from name."""
+    name = filename
+    if not is_dir:
+        name = Path(filename).stem  # remove extension for files only
+    name = re.sub(r'^\d+\.', '', name)  # remove leading number prefix
+    name = name.replace('-', ' ')  # dashes to spaces
+    return name
+
+
+def get_items(path: Path) -> list[dict]:
+    """Get sorted list of items (dirs and files) in path."""
+    items = []
+    if not path.exists():
+        return items
+
+    for entry in sorted(path.iterdir()):
+        if entry.name.startswith('.'):
+            continue
+        # Skip self-referential symlinks (dir inside itself)
+        if entry.is_symlink() and entry.name == path.name:
+            continue
+        is_dir = entry.is_dir()
+        items.append({
+            'path': entry,
+            'name': parse_name(entry.name, is_dir),
+            'is_dir': is_dir,
+            'relative': str(entry.relative_to(SOUNDBOARD_ROOT)),
+        })
+    return items
+
+
+def generate_grid(items: list[dict], current_path: str) -> str:
+    """Generate eww grid widget for items."""
+    # Determine grid size needed
+    num_items = len(items)
+    if num_items <= 8:
+        grid_size = 3
+        fill_order = FILL_ORDER_3x3
+    else:
+        grid_size = 5
+        fill_order = FILL_ORDER_3x3 + FILL_ORDER_5x5_OUTER
+
+    # Create grid cells
+    # grid[y][x] = widget content
+    offset = grid_size // 2
+    grid = [[None for _ in range(grid_size)] for _ in range(grid_size)]
+
+    # Center is always back/close
+    cx, cy = offset, offset
+    if current_path:
+        # Go up one level
+        parent = str(Path(current_path).parent)
+        if parent == '.':
+            parent = ''
+        back_cmd = f"soundboard-generate '{parent}' && eww open soundboard"
+        grid[cy][cx] = f'''(eventbox :class "grid-cell back-btn" :cursor "pointer"
+      :onclick "{back_cmd}"
+      (label :text "⤴️"))'''
+    else:
+        # At root, close and reset submap
+        grid[cy][cx] = '''(eventbox :class "grid-cell close-btn" :cursor "pointer"
+      :onclick "eww close soundboard; hyprctl dispatch submap reset"
+      (label :text "❌"))'''
+
+    # Fill items in spiral order (skip position 0 which is center)
+    for i, item in enumerate(items):
+        if i >= len(fill_order) - 1:
+            break  # grid full
+
+        pos = fill_order[i + 1]  # +1 to skip center
+        gx = offset + pos[0]
+        gy = offset + pos[1]
+
+        if item['is_dir']:
+            # Directory - navigate into it
+            cmd = f"soundboard-generate '{item['relative']}' && eww open soundboard"
+            grid[gy][gx] = f'''(eventbox :class "grid-cell dir-btn" :cursor "pointer"
+      :onclick "{cmd}"
+      (label :text "{item['name']}"))'''
+        else:
+            # File - play it, close, and reset submap
+            cmd = f"soundboard-play '{item['relative']}'; eww close soundboard; hyprctl dispatch submap reset"
+            grid[gy][gx] = f'''(eventbox :class "grid-cell sample-btn" :cursor "pointer"
+      :onclick "{cmd}"
+      (label :text "{item['name']}"))'''
+
+    # Fill remaining with empty cells
+    for y in range(grid_size):
+        for x in range(grid_size):
+            if grid[y][x] is None:
+                grid[y][x] = '(box :class "grid-cell empty")'
+
+    # Generate rows
+    rows = []
+    for y in range(grid_size):
+        cells = "\n      ".join(grid[y])
+        rows.append(f'''(box :orientation "horizontal" :space-evenly true
+      {cells})''')
+
+    rows_str = "\n    ".join(rows)
+    return f'''(box :class "soundboard-grid" :orientation "vertical" :space-evenly true
+    {rows_str})'''
+
+
+def generate_config(current_path: str = "") -> str:
+    """Generate full eww config."""
+    full_path = SOUNDBOARD_ROOT / current_path if current_path else SOUNDBOARD_ROOT
+    items = get_items(full_path)
+    grid = generate_grid(items, current_path)
+
+    return f'''; Soundboard - auto-generated by soundboard-generate
+; Current path: {current_path or "(root)"}
+
+(defwidget soundboard-main []
+  (overlay
+    ; Backdrop - clicking anywhere outside closes
+    (eventbox :class "soundboard-backdrop"
+      :onclick "eww close soundboard; hyprctl dispatch submap reset")
+    ; Centered content
+    (box :halign "center" :valign "center"
+      (eventbox :onclick ""
+        (box :class "soundboard-container"
+          {grid})))))
+'''
+
+
+def main():
+    import subprocess
+
+    current_path = sys.argv[1] if len(sys.argv) > 1 else ""
+    config = generate_config(current_path)
+    OUTPUT_FILE.parent.mkdir(parents=True, exist_ok=True)
+    OUTPUT_FILE.write_text(config)
+
+    # Reload eww to pick up changes
+    subprocess.run(["eww", "reload"], capture_output=True)
+
+
+if __name__ == "__main__":
+    main()

@@ -19,3 +19,4 @@ Need to add proper checking/installation for build-time dependencies:
 - [ ] Add `make test` that runs build in a container to verify deps are complete
 - [ ] Add BUILD_DEPS check using pkg-config before building eww/whisper
 - [ ] Refactor bin/ - keep scripts in scripts/ or src/, gitignore all of bin/, have install copy/link everything into bin/
+- [ ] fix pycache dirs being linked in, but without special casing it.
