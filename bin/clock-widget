@@ -37,15 +37,15 @@ clocks=(
     "🕚" "🕦"  # 11, 11:30
 )
 
-# Calculate index: (hour - 1) * 2 + half
-# But hour 12 should be index 0
+# Calculate index: hour 12 is at index 0, hour 1 at index 2, etc.
 if [ $hour -eq 12 ]; then
     index=$half
 else
-    index=$(( (hour - 1) * 2 + half ))
+    index=$(( hour * 2 + half ))
 fi
 
 emoji="${clocks[$index]}"
+day=$(date +%d)
 time=$(date +'%H:%M')
 month=$(date +'%B %Y')
 
@@ -61,4 +61,4 @@ else
 (install ncal package for calendar)"
 fi
 
-jq -nc --arg text "<span color='#b69bf1'>$emoji</span> $time" --arg tooltip "$tooltip" '{text: $text, tooltip: $tooltip}'
+jq -nc --arg text "$day <span color='#b69bf1'>$emoji</span> $time" --arg tooltip "$tooltip" '{text: $text, tooltip: $tooltip}'

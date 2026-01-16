@@ -9,3 +9,6 @@ bin/eww
 
 # Python cache
 __pycache__
+
+# vim swap
+*.swp
