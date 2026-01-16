@@ -16,7 +16,7 @@ from pathlib import Path
 
 SOUNDBOARD_ROOT = Path.home() / ".config" / "soundboard"
 # Output to build dir (symlinked from ~/.config/eww/soundboard.yuck)
-SCRIPT_DIR = Path(__file__).parent.parent
+SCRIPT_DIR = Path(__file__).resolve().parent.parent
 OUTPUT_FILE = SCRIPT_DIR / "build" / "soundboard.yuck"
 
 # Spiral fill order from center outward
