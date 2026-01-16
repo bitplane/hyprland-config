@@ -38,11 +38,9 @@ install: check-deps whisper-cpp eww
 		echo "  Linked $$dest"; \
 	done
 
-	# Generate and link soundboard config
+	# Generate soundboard config (linked via config/eww/soundboard.yuck symlink)
 	@mkdir -p $(BUILD_DIR)
 	@$(PWD)/bin/soundboard-generate
-	@ln -sf $(PWD)/build/soundboard.yuck $(CONFIG_DIR)/eww/soundboard.yuck
-	@echo "  Linked soundboard.yuck (generated)"
 
 	# Clean broken symlinks and empty dirs in bin
 	@find $(BIN_DIR) -xtype l -delete 2>/dev/null || true
