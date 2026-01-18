@@ -1,0 +1,21 @@
+#!/bin/bash
+# Set up audio routing: Real mic → Microphone, Broadcast → Microphone + Default Sink
+# Run after pipewire starts or when switching audio devices
+
+# Find the first hardware mic (not bluetooth, not monitor)
+MIC=$(pw-link -o | grep -E "alsa_input.*source:capture_FL" | grep -v monitor | head -1 | sed 's/:capture_FL//')
+DEFAULT_SINK=$(pactl get-default-sink)
+
+echo "Audio setup: mic=$MIC sink=$DEFAULT_SINK"
+
+# Real mic → Microphone
+pw-link "$MIC:capture_FL" Microphone:playback_FL 2>/dev/null || true
+pw-link "$MIC:capture_FR" Microphone:playback_FR 2>/dev/null || true
+
+# Broadcast → Microphone
+pw-link broadcast:monitor_FL Microphone:playback_FL 2>/dev/null || true
+pw-link broadcast:monitor_FR Microphone:playback_FR 2>/dev/null || true
+
+# Broadcast → Speakers
+pw-link broadcast:monitor_FL "$DEFAULT_SINK:playback_FL" 2>/dev/null || true
+pw-link broadcast:monitor_FR "$DEFAULT_SINK:playback_FR" 2>/dev/null || true

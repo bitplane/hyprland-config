@@ -1,5 +1,5 @@
 #!/bin/bash
-# Play a soundboard sample to both mic (soundboard sink) and local output
+# Play a soundboard sample to broadcast sink (routes to both mic and speakers)
 # Usage: soundboard-play <relative-path-to-sample>
 
 SAMPLE_DIR=~/.config/soundboard
@@ -10,7 +10,5 @@ if [ ! -f "$SAMPLE" ]; then
     exit 1
 fi
 
-# Play to soundboard sink (for mic) and default output (for self)
-# Both backgrounded so we return immediately
-paplay --device=soundboard --volume=49152 "$SAMPLE" &
-paplay --volume=49152 "$SAMPLE" &
+# Play to broadcast sink (looped to both soundboard and speakers)
+paplay --device=broadcast --volume=49152 "$SAMPLE" &
