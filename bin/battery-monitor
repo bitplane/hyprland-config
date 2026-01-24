@@ -171,11 +171,11 @@ class BatteryMonitor:
     def handle_plug(self):
         """Handle AC plugged in event."""
         log.debug("AC plugged in: flash cyan and reset")
+        self.stop_polling_loop()
         if STATEFILE.exists():
             keyboard_notify((0, 128, 128))
             time.sleep(1)
         keyboard_reset()
-        self.stop_polling_loop()
         STATEFILE.unlink(missing_ok=True)
 
     def run(self):
