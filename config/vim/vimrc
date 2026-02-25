@@ -40,3 +40,9 @@ set hlsearch
 filetype on
 filetype plugin on
 filetype indent on
+
+
+" Auto re-load when Claude makes edits
+set autoread
+au FocusGained,BufEnter * checktime
+au CursorHold,CursorHoldI * checktime

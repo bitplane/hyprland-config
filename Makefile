@@ -31,7 +31,7 @@ install: check-deps whisper-cpp eww
 	@find $(CONFIG_DIR) -type d -empty -delete 2>/dev/null || true
 
 	# Link configs
-	@find $(PWD)/config -type f | while read file; do \
+	@find $(PWD)/config \( -type f -o -type l \) | while read file; do \
 		dest="$(CONFIG_DIR)/$${file#$(PWD)/config/}"; \
 		mkdir -p "$$(dirname "$$dest")"; \
 		ln -sf "$$file" "$$dest"; \
