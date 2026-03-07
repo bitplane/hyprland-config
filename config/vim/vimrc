@@ -44,5 +44,6 @@ filetype indent on
 
 " Auto re-load when Claude makes edits
 set autoread
+set updatetime=1000
 au FocusGained,BufEnter * checktime
 au CursorHold,CursorHoldI * checktime
