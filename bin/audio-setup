@@ -2,15 +2,28 @@
 # Set up audio routing: Real mic → Microphone, Broadcast → Microphone + Default Sink
 # Run after pipewire starts or when switching audio devices
 
-# Find the first hardware mic (not bluetooth, not monitor)
-MIC=$(pw-link -o | grep -E "alsa_input.*source:capture_FL" | grep -v monitor | head -1 | sed 's/:capture_FL//')
+DEFAULT_SOURCE=$(pactl get-default-source)
 DEFAULT_SINK=$(pactl get-default-sink)
 
-echo "Audio setup: mic=$MIC sink=$DEFAULT_SINK"
+echo "Audio setup: source=$DEFAULT_SOURCE sink=$DEFAULT_SINK"
 
-# Real mic → Microphone
-pw-link "$MIC:capture_FL" Microphone:playback_FL 2>/dev/null || true
-pw-link "$MIC:capture_FR" Microphone:playback_FR 2>/dev/null || true
+# Get the capture port names for the default source
+MIC_PORTS=$(pw-link -o | grep "^${DEFAULT_SOURCE}:capture_")
+
+if [ -z "$MIC_PORTS" ]; then
+    echo "No capture ports found for $DEFAULT_SOURCE"
+    exit 1
+fi
+
+# Real mic → Microphone (handle mono or stereo)
+for port in $MIC_PORTS; do
+    pw-link "$port" Microphone:playback_FL 2>/dev/null || true
+    if echo "$port" | grep -q "_FR$"; then
+        pw-link "$port" Microphone:playback_FR 2>/dev/null || true
+    elif echo "$port" | grep -q "_MONO$"; then
+        pw-link "$port" Microphone:playback_FR 2>/dev/null || true
+    fi
+done
 
 # Broadcast → Microphone
 pw-link broadcast:monitor_FL Microphone:playback_FL 2>/dev/null || true
