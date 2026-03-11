@@ -38,10 +38,6 @@ install: whisper-cpp eww
 		echo "  Linked $$dest"; \
 	done
 
-	# Generate soundboard config (linked via config/eww/soundboard.yuck symlink)
-	@mkdir -p $(BUILD_DIR)
-	@$(PWD)/bin/soundboard-generate
-
 	# Clean broken symlinks and empty dirs in bin
 	@find $(BIN_DIR) -xtype l -delete 2>/dev/null || true
 	@find $(BIN_DIR) -type d -empty -delete 2>/dev/null || true
@@ -53,6 +49,10 @@ install: whisper-cpp eww
 		ln -sf $(PWD)/$$script $(BIN_DIR)/$$script_name; \
 		echo "  Linked $$script_name"; \
 	done
+
+	# Generate soundboard config (needs eww on PATH)
+	@mkdir -p $(BUILD_DIR)
+	@$(PWD)/bin/soundboard-generate
 
 	# Link libraries
 	@if [ -d lib ]; then \

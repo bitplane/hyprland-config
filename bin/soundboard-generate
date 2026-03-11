@@ -192,8 +192,11 @@ def main():
     OUTPUT_FILE.parent.mkdir(parents=True, exist_ok=True)
     OUTPUT_FILE.write_text(config)
 
-    # Reload eww to pick up changes
-    subprocess.run(["eww", "reload"], capture_output=True)
+    # Reload eww to pick up changes (may not be running during install)
+    try:
+        subprocess.run(["eww", "reload"], capture_output=True)
+    except FileNotFoundError:
+        pass
 
 
 if __name__ == "__main__":
