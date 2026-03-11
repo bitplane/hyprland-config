@@ -8,7 +8,7 @@ BUILD_DIR = ./build
 WHISPER_BUILD = $(BUILD_DIR)/whisper.cpp
 
 # Packages
-APT_DEPS = hyprland waybar gnome-terminal fuzzel mako-notifier grim slurp wf-recorder wl-clipboard wtype wofi wob thunar brightnessctl playerctl blueman vim-gtk3 ncal sox curl jq hyprpaper pipewire cmake pulseaudio-utils libnotify-bin network-manager tmux chafa wireplumber libgtk-3-dev libdbusmenu-glib-dev libdbusmenu-gtk3-dev libpango1.0-dev libgtk-layer-shell-dev python3-pip
+APT_DEPS = hyprland waybar gnome-terminal fuzzel mako-notifier grim slurp wf-recorder wl-clipboard wtype wofi wob thunar brightnessctl playerctl blueman neovim ncal sox curl jq hyprpaper pipewire cmake pulseaudio-utils libnotify-bin network-manager tmux chafa wireplumber libgtk-3-dev libdbusmenu-glib-dev libdbusmenu-gtk3-dev libpango1.0-dev libgtk-layer-shell-dev python3-pip openrazer-daemon ffmpeg
 
 install: whisper-cpp eww
 	@echo "Installing Hyprland configuration..."
@@ -62,6 +62,10 @@ install: whisper-cpp eww
 		done; \
 		echo "  Linked libraries"; \
 	fi
+
+	# Enable and start systemd user services
+	systemctl --user daemon-reload
+	systemctl --user enable --now whisper
 
 	# Download Whisper model if needed
 	@if [ ! -f $(CACHE_DIR)/models/ggml-base.bin ]; then \
