@@ -7,7 +7,7 @@
       "format": "🪟",
       "on-click": "wofi --show drun"
     },
-    "hyprland/workspaces": {
+    "hyprland/workspaces":  {
       "format": "{icon}",
       "on-click": "activate",
       "all-outputs": true,
@@ -44,7 +44,7 @@
       "on-click": "gnome-calendar"
     },
     "backlight": {
-      "device": "amdgpu_bl1",
+      "device": "",
       "format": "{icon}",
       "format-icons": ["🔅", "🔆", "☀️"],
       "tooltip-format": "Brightness: {percent}%",
