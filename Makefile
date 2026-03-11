@@ -1,4 +1,4 @@
-.PHONY: install clean whisper-cpp eww check-deps
+.PHONY: install clean whisper-cpp eww deps
 
 # Directories
 CONFIG_DIR = $(HOME)/.config
@@ -7,10 +7,10 @@ CACHE_DIR = $(HOME)/.cache/dictate
 BUILD_DIR = ./build
 WHISPER_BUILD = $(BUILD_DIR)/whisper.cpp
 
-# Dependencies (binary:package if different)
-DEPS = hyprland waybar gnome-terminal fuzzel mako:mako-notifier grim slurp wf-recorder wl-copy:wl-clipboard wtype wofi wob thunar brightnessctl playerctl blueman-applet:blueman gvim:vim-gtk3 ncal sox curl jq hyprpaper pipewire pw-loopback:pipewire cmake
+# Packages
+APT_DEPS = hyprland waybar gnome-terminal fuzzel mako-notifier grim slurp wf-recorder wl-clipboard wtype wofi wob thunar brightnessctl playerctl blueman vim-gtk3 ncal sox curl jq hyprpaper pipewire cmake pulseaudio-utils libnotify-bin network-manager tmux chafa wireplumber libgtk-3-dev libdbusmenu-glib-dev libdbusmenu-gtk3-dev libpango1.0-dev libgtk-layer-shell-dev python3-pip
 
-install: check-deps whisper-cpp eww
+install: whisper-cpp eww
 	@echo "Installing Hyprland configuration..."
 
 	# Create directories
@@ -20,7 +20,7 @@ install: check-deps whisper-cpp eww
 	# Install Python dependencies
 	@echo "Installing Python dependencies..."
 	@if command -v pip3 >/dev/null 2>&1; then \
-		pip3 install pyudev rofimoji; \
+		pip3 install pyudev rofimoji Pillow; \
 		echo "✓ Python dependencies installed"; \
 	else \
 		echo "✗ pip3 not found, please install python3-pip"; \
@@ -96,15 +96,18 @@ whisper-cpp:
 		mkdir -p lib && \
 		cp $(WHISPER_BUILD)/build/src/libwhisper.so* lib/ && \
 		cd lib && \
-		ln -sf libwhisper.so.* libwhisper.so.1 && \
-		ln -sf libwhisper.so.1 libwhisper.so && \
+		full=$$(ls libwhisper.so.*.* 2>/dev/null | sort -V | tail -1) && \
+		if [ -n "$$full" ]; then \
+			ln -sf "$$full" libwhisper.so.1 && \
+			ln -sf libwhisper.so.1 libwhisper.so; \
+		fi && \
 		echo "✓ whisper libraries copied"; \
 	fi
 
 eww:
+	@command -v cargo >/dev/null 2>&1 || { echo "cargo not found. Run 'make deps' first."; exit 1; }
 	@if [ ! -f bin/eww ]; then \
 		echo "Building eww (this takes a few minutes)..."; \
-		echo "Note: requires libgtk-3-dev libdbusmenu-glib-dev libpango1.0-dev libgtk-layer-shell-dev"; \
 		mkdir -p $(BUILD_DIR); \
 		if [ ! -d $(BUILD_DIR)/eww ]; then \
 			git clone https://github.com/elkowar/eww.git $(BUILD_DIR)/eww; \
@@ -116,24 +119,11 @@ eww:
 		echo "✓ eww already built"; \
 	fi
 
-check-deps:
-	@echo "Checking dependencies..."
-	@missing=""; \
-	for entry in $(DEPS); do \
-		bin=$${entry%%:*}; \
-		pkg=$${entry#*:}; \
-		if command -v $$bin >/dev/null 2>&1; then \
-			echo "✓ $$bin"; \
-		else \
-			echo "✗ $$bin (missing)"; \
-			missing="$$missing $$pkg"; \
-		fi; \
-	done; \
-	if [ -n "$$missing" ]; then \
-		echo ""; \
-		echo "Missing dependencies. Install with:"; \
-		echo "  sudo apt install$$missing"; \
-		echo ""; \
+deps:
+	sudo apt install $(APT_DEPS)
+	@if ! command -v cargo >/dev/null 2>&1; then \
+		echo "Installing Rust via rustup..."; \
+		curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y; \
 	fi
 
 clean:

@@ -7,10 +7,9 @@ Hyprland setup with waybar, RGB keyboard control, and all the bells and whistles
 ```bash
 git clone <repo-url> ~/src/hyprland-config
 cd ~/src/hyprland-config
+make deps
 make install
 ```
-
-The Makefile will check for missing dependencies and tell you what to install.
 
 ## Features
 
