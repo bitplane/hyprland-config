@@ -2,6 +2,14 @@
 # Set up audio routing: Real mic → Microphone, Broadcast → Microphone + Default Sink
 # Run after pipewire starts or when switching audio devices
 
+# Wait for PipeWire/PulseAudio to be ready
+for i in $(seq 1 30); do
+    if pactl info >/dev/null 2>&1 && pw-link -o 2>/dev/null | grep -q "Microphone"; then
+        break
+    fi
+    sleep 1
+done
+
 DEFAULT_SOURCE=$(pactl get-default-source)
 DEFAULT_SINK=$(pactl get-default-sink)
 
