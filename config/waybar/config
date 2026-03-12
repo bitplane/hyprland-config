@@ -133,7 +133,7 @@
      "return-type": "json",
      "interval": 5,
      "format": "{}",
-     "on-click": "nm-connection-editor"
+     "on-click": "wifi-picker"
     }
 
 }

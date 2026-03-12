@@ -1,0 +1,42 @@
+#!/bin/bash
+# WiFi network picker using nmcli + wofi
+
+# Rescan (don't wait for it)
+nmcli device wifi rescan 2>/dev/null &
+
+# List networks: signal strength + SSID + security, deduplicated by SSID
+NETWORKS=$(nmcli -t -f SIGNAL,SSID,SECURITY device wifi list | sort -t: -k1 -rn | awk -F: '
+    !seen[$2]++ && $2 != "" {
+        signal = $1 + 0
+        if (signal >= 75) icon = "▂▄▆█"
+        else if (signal >= 50) icon = "▂▄▆ "
+        else if (signal >= 25) icon = "▂▄  "
+        else icon = "▂   "
+        lock = ($3 != "") ? "🔒" : "  "
+        printf "%s %s %s\n", icon, lock, $2
+    }
+')
+
+[ -z "$NETWORKS" ] && notify-send "WiFi" "No networks found" && exit 1
+
+# Show picker
+CHOSEN=$(echo "$NETWORKS" | wofi --dmenu -i -p "WiFi")
+[ -z "$CHOSEN" ] && exit 0
+
+# Extract SSID (everything after the icon and lock columns)
+SSID=$(echo "$CHOSEN" | sed 's/^.\{8\}//')
+
+# Already known? Just connect
+if nmcli -t -f NAME connection show | grep -qxF "$SSID"; then
+    nmcli connection up "$SSID" && notify-send "WiFi" "Connected to $SSID" && exit 0
+fi
+
+# New network — prompt for password
+PASSWORD=$(echo "" | wofi --dmenu -p "Password for $SSID")
+[ -z "$PASSWORD" ] && exit 0
+
+if nmcli device wifi connect "$SSID" password "$PASSWORD"; then
+    notify-send "WiFi" "Connected to $SSID"
+else
+    notify-send "WiFi" "Failed to connect to $SSID"
+fi
