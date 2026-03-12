@@ -32,7 +32,7 @@ keyboard-notify --color 0,255,0 A
 RESPONSE=$(curl -s -X POST -F "file=@$WAVFILE" http://127.0.0.1:8000/v1/audio/transcriptions)
 
 # Extract text from JSON response
-TEXT=$(echo "$RESPONSE" | jq -r '.text // empty')
+TEXT=$(echo "$RESPONSE" | jq -r '.text // empty' | tr '\n' ' ')
 
 if [ -z "$TEXT" ]; then
     keyboard-reset
