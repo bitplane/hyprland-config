@@ -6,9 +6,10 @@ BIN_DIR = $(HOME)/.local/bin
 CACHE_DIR = $(HOME)/.cache/dictate
 BUILD_DIR = ./build
 WHISPER_BUILD = $(BUILD_DIR)/whisper.cpp
+VENV_DIR = $(HOME)/.local/share/hyprland-config/venv
 
 # Packages
-APT_DEPS = hyprland waybar gnome-terminal fuzzel mako-notifier grim slurp wf-recorder wl-clipboard wtype wofi wob thunar brightnessctl playerctl blueman neovim ncal sox curl jq hyprpaper pipewire cmake pulseaudio-utils libnotify-bin network-manager tmux chafa wireplumber libgtk-3-dev libdbusmenu-glib-dev libdbusmenu-gtk3-dev libpango1.0-dev libgtk-layer-shell-dev python3-pip openrazer-daemon ffmpeg pavucontrol wlsunset gnome-calendar gnome-power-manager firefox swaylock
+APT_DEPS = hyprland waybar gnome-terminal fuzzel mako-notifier grim slurp wf-recorder wl-clipboard wtype wofi wob thunar brightnessctl playerctl blueman neovim ncal sox curl jq hyprpaper pipewire cmake pulseaudio-utils libnotify-bin network-manager tmux chafa wireplumber libgtk-3-dev libdbusmenu-glib-dev libdbusmenu-gtk3-dev libpango1.0-dev libgtk-layer-shell-dev python3-pip openrazer-daemon ffmpeg pavucontrol wlsunset gnome-calendar gnome-power-manager firefox swaylock wdisplays
 
 install: whisper-cpp eww
 	@echo "Installing Hyprland configuration..."
@@ -17,14 +18,12 @@ install: whisper-cpp eww
 	mkdir -p $(BIN_DIR)
 	mkdir -p $(CACHE_DIR)/models
 
-	# Install Python dependencies
+	# Install Python dependencies into venv
 	@echo "Installing Python dependencies..."
-	@if command -v pip3 >/dev/null 2>&1; then \
-		pip3 install pyudev rofimoji Pillow; \
-		echo "✓ Python dependencies installed"; \
-	else \
-		echo "✗ pip3 not found, please install python3-pip"; \
-	fi
+	@python3 -m venv $(VENV_DIR)
+	@$(VENV_DIR)/bin/pip install pyudev rofimoji Pillow
+	@ln -sf $(VENV_DIR)/bin/rofimoji $(BIN_DIR)/rofimoji
+	@echo "✓ Python dependencies installed"
 
 	# Clean broken symlinks and empty dirs in config
 	@find $(CONFIG_DIR) -xtype l -delete 2>/dev/null || true
