@@ -9,7 +9,7 @@ WHISPER_BUILD = $(BUILD_DIR)/whisper.cpp
 VENV_DIR = $(HOME)/.local/share/hyprland-config/venv
 
 # Packages
-APT_DEPS = hyprland waybar gnome-terminal fuzzel mako-notifier grim slurp wf-recorder wl-clipboard wtype wofi wob thunar brightnessctl playerctl blueman neovim ncal sox curl jq hyprpaper pipewire cmake pulseaudio-utils libnotify-bin network-manager tmux chafa wireplumber libgtk-3-dev libdbusmenu-glib-dev libdbusmenu-gtk3-dev libpango1.0-dev libgtk-layer-shell-dev python3-pip openrazer-daemon ffmpeg pavucontrol wlsunset gnome-calendar gnome-power-manager firefox swaylock wdisplays
+APT_DEPS = hyprland waybar gnome-terminal fuzzel mako-notifier grim slurp wf-recorder wl-clipboard wtype wofi wob thunar brightnessctl playerctl blueman neovim ncal sox curl jq hyprpaper pipewire cmake pulseaudio-utils libnotify-bin network-manager tmux chafa wireplumber libgtk-3-dev libdbusmenu-glib-dev libdbusmenu-gtk3-dev libpango1.0-dev libgtk-layer-shell-dev python3-pip openrazer-daemon ffmpeg pavucontrol wlsunset gnome-calendar gnome-power-manager firefox swaylock wdisplays fzf
 
 install: whisper-cpp eww
 	@echo "Installing Hyprland configuration..."
