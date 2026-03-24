@@ -23,6 +23,16 @@ if [ -z "$MIC_PORTS" ]; then
     exit 1
 fi
 
+# Disconnect any existing mic links to Microphone (but keep broadcast links)
+for channel in FL FR; do
+    pw-link -l "Microphone:playback_${channel}" 2>/dev/null \
+        | grep '|<-' | grep -v 'broadcast:' \
+        | sed 's/.*|<- //' \
+        | while read -r src; do
+            pw-link -d "$src" "Microphone:playback_${channel}" 2>/dev/null || true
+        done
+done
+
 # Real mic → Microphone (handle mono or stereo)
 for port in $MIC_PORTS; do
     pw-link "$port" Microphone:playback_FL 2>/dev/null || true
