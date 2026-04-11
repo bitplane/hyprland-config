@@ -14,9 +14,9 @@ else
     FILE="$HOME/Videos/recording-$(date +%Y%m%d-%H%M%S).mp4"
 
     if [ "$1" = "area" ]; then
-        wf-recorder -a -g "$(slurp)" -f "$FILE" &
+        wf-recorder -a -r 30 -g "$(slurp)" -f "$FILE" &
     else
-        wf-recorder -a -f "$FILE" &
+        wf-recorder -a -r 30 -f "$FILE" &
     fi
 
     echo $! > "$PIDFILE"
