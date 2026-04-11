@@ -1,0 +1,42 @@
+#!/bin/bash
+set -euo pipefail
+
+CONTAINER_NAME="cc-sandbox"
+IMAGE_NAME="cc-sandbox:latest"
+HOST_SRC="$HOME/src"
+HOST_CLAUDE="$HOME/.claude"
+HOST_CLAUDE_JSON="$HOME/.claude.json"
+HOST_TMP="/tmp/claude"
+
+mkdir -p -m 1777 "$HOST_TMP"
+
+# Build image if it doesn't exist
+if ! podman image exists "$IMAGE_NAME"; then
+    echo "Building cc-sandbox image..."
+    podman build -t "$IMAGE_NAME" -f "$(dirname "$(readlink -f "$0")")/Dockerfile.cc" "$(dirname "$(readlink -f "$0")")"
+fi
+
+# Create container if it doesn't exist
+if ! podman container exists "$CONTAINER_NAME"; then
+    echo "Creating cc-sandbox container..."
+    podman create \
+        --name "$CONTAINER_NAME" \
+        --userns=keep-id \
+        -it \
+        -v "$HOST_SRC:$HOST_SRC" \
+        -v "$HOST_CLAUDE:$HOME/.claude" \
+        -v "$HOST_CLAUDE_JSON:$HOME/.claude.json" \
+        -v "$HOST_TMP:/tmp" \
+        --hostname cc-sandbox \
+        "$IMAGE_NAME" \
+        sleep infinity
+fi
+
+# Start container if not running
+if [ "$(podman inspect -f '{{.State.Status}}' "$CONTAINER_NAME")" != "running" ]; then
+    podman start "$CONTAINER_NAME" > /dev/null
+fi
+
+# Exec claude in the container at the current working directory
+exec podman exec -it -w "$(pwd)" "$CONTAINER_NAME" \
+    claude --dangerously-skip-permissions "$@"
